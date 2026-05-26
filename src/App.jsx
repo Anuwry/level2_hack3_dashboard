@@ -26,13 +26,13 @@ import {
 const asset = (name) => `/assets/${name}`
 
 const navItems = [
-  { label: 'Overview', icon: Home, active: true },
-  { label: 'Training', icon: Dumbbell },
-  { label: 'Shot Analysis', icon: Radar },
-  { label: 'Reports', icon: ChartNoAxesCombined },
-  { label: 'Sensors', icon: Activity },
-  { label: 'Players', icon: Users },
-  { label: 'Settings', icon: Settings },
+  { id: 'overview', label: 'Overview', icon: Home },
+  { id: 'training', label: 'Training', icon: Dumbbell },
+  { id: 'shot-analysis', label: 'Shot Analysis', icon: Radar },
+  { id: 'reports', label: 'Reports', icon: ChartNoAxesCombined },
+  { id: 'sensors', label: 'Sensors', icon: Activity },
+  { id: 'players', label: 'Players', icon: Users },
+  { id: 'settings', label: 'Settings', icon: Settings },
 ]
 
 const devices = [
@@ -72,17 +72,17 @@ const recentShots = [
   ['37', 'Smash', 'Sweet Spot', '95', '01:12', 'green'],
 ]
 
-function Sidebar() {
+function Sidebar({ activePage, onPageChange }) {
   return (
     <aside className="sidebar">
       <img className="logo" src={asset('ai-coach-logo.png')} alt="AI Coach logo" />
 
       <nav className="nav" aria-label="Dashboard navigation">
-        {navItems.map(({ label, icon: Icon, active }) => (
-          <a className={active ? 'active' : ''} href="#" key={label}>
+        {navItems.map(({ id, label, icon: Icon }) => (
+          <button className={activePage === id ? 'active' : ''} type="button" onClick={() => onPageChange(id)} key={id}>
             <Icon size={18} />
             <span>{label}</span>
-          </a>
+          </button>
         ))}
       </nav>
 
@@ -106,13 +106,15 @@ function Sidebar() {
   )
 }
 
-function Header() {
+function Header({ activePage }) {
+  const pageTitle = navItems.find((item) => item.id === activePage)?.label || 'Overview'
+
   return (
     <header className="header">
       <div>
         <p>Live Training Session</p>
-        <h1>Badminton AI Coach</h1>
-        <span>Choose a category to inspect the training data.</span>
+        <h1>{pageTitle === 'Overview' ? 'Badminton AI Coach' : pageTitle}</h1>
+        <span>{pageTitle === 'Overview' ? 'Choose a category to inspect the training data.' : 'Mock-up layout for this section of the dashboard.'}</span>
       </div>
       <div className="headerStatus">
         <div className="connectPill">
@@ -411,6 +413,196 @@ const categories = [
   },
 ]
 
+const pageMockups = {
+  training: {
+    kicker: 'Training Control',
+    title: 'Live Session Workspace',
+    description: 'A focused control surface for starting drills, tracking live progress, and reviewing the last shot.',
+    primary: [
+      ['Session Timer', '00:18:36', 'Live training duration'],
+      ['Current Drill', 'Smash Accuracy', 'Sweet spot focus'],
+      ['Shot Count', '40', 'Target 60 shots'],
+    ],
+    sections: [
+      {
+        title: 'Drill Presets',
+        items: ['Smash accuracy', 'Timing correction', 'Drop / Drive variation', 'Footwork recovery'],
+      },
+      {
+        title: 'Live Feedback',
+        items: ['Last shot: Smash #40', 'Impact: Sweet Spot', 'Timing needs earlier contact', 'Elbow angle: 122°'],
+      },
+      {
+        title: 'Controls',
+        items: ['Start / Pause session', 'End and save report', 'Mark shot manually', 'Sync sensors'],
+      },
+    ],
+  },
+  'shot-analysis': {
+    kicker: 'Shot Inspector',
+    title: 'Shot-by-shot Review',
+    description: 'A workspace for choosing one shot and inspecting form, impact, timing, and sensor evidence.',
+    primary: [
+      ['Selected Shot', '#40 Smash', 'Latest shot'],
+      ['Impact Score', '98/100', 'Strong sweet spot'],
+      ['Elbow Angle', '122°', 'Needs correction'],
+    ],
+    sections: [
+      {
+        title: 'Shot List',
+        items: ['#40 Smash - Sweet Spot', '#39 Clear - Timing', '#38 Drop - Timing', '#37 Smash - Sweet Spot'],
+      },
+      {
+        title: 'Analysis Panels',
+        items: ['Elbow form analysis', 'Sweet spot impact dot', 'Power and timing score', 'Gyro speed summary'],
+      },
+      {
+        title: 'Evidence',
+        items: ['Video frame preview', 'Pose confidence', 'Racket face confidence', 'Raw sensor link'],
+      },
+    ],
+  },
+  reports: {
+    kicker: 'Reports',
+    title: 'Session History and Trends',
+    description: 'A reporting area for comparing sessions, viewing progress, and exporting summaries.',
+    primary: [
+      ['Sessions', '12', 'This month'],
+      ['Best Score', '91', 'April 24'],
+      ['Trend', '+8%', 'Sweet spot improvement'],
+    ],
+    sections: [
+      {
+        title: 'Session History',
+        items: ['Date and duration', 'Total shots', 'Overall score', 'Best shot'],
+      },
+      {
+        title: 'Trend Charts',
+        items: ['Power trend', 'Timing trend', 'Sweet spot trend', 'Injury risk trend'],
+      },
+      {
+        title: 'Export',
+        items: ['PDF report', 'CSV shot data', 'Coach summary', 'Share link'],
+      },
+    ],
+  },
+  sensors: {
+    kicker: 'Sensors',
+    title: 'Device Health and Calibration',
+    description: 'A hardware management view for connection status, battery, signal, and calibration.',
+    primary: [
+      ['Connected', '4/4', 'All sensors online'],
+      ['Battery', '100%', 'Average level'],
+      ['Signal', 'Good', 'Bluetooth 5.2'],
+    ],
+    sections: [
+      {
+        title: 'Device Cards',
+        items: ['Core Sensor', 'Wrist Band', 'AI Coach Hub', 'Sensor Pod'],
+      },
+      {
+        title: 'Health Checks',
+        items: ['Battery percent', 'Last seen time', 'Signal strength', 'Firmware version'],
+      },
+      {
+        title: 'Calibration',
+        items: ['Start calibration', 'Reset device', 'Test vibration', 'Reconnect device'],
+      },
+    ],
+  },
+  players: {
+    kicker: 'Players',
+    title: 'Player Profiles',
+    description: 'A profile management page for separating session history and calibration per player.',
+    primary: [
+      ['Current Player', 'Player 01', 'Intermediate'],
+      ['Dominant Hand', 'Right', 'Profile setting'],
+      ['Baseline', '82/100', 'Current average'],
+    ],
+    sections: [
+      {
+        title: 'Profile',
+        items: ['Name and level', 'Dominant hand', 'Height / reach', 'Training goal'],
+      },
+      {
+        title: 'History',
+        items: ['Recent sessions', 'Best shot type', 'Improvement areas', 'Risk notes'],
+      },
+      {
+        title: 'Management',
+        items: ['Add player', 'Switch player', 'Edit profile', 'Archive player'],
+      },
+    ],
+  },
+  settings: {
+    kicker: 'Settings',
+    title: 'Scoring and System Settings',
+    description: 'Configuration for scoring weights, form thresholds, data source, and display preferences.',
+    primary: [
+      ['Elbow Range', '85°-105°', 'Recommended'],
+      ['Data Source', 'Mock API', 'Development mode'],
+      ['Units', 'Metric', 'km/h, m/s²'],
+    ],
+    sections: [
+      {
+        title: 'Scoring',
+        items: ['Power weight', 'Timing weight', 'Sweet spot weight', 'Consistency weight'],
+      },
+      {
+        title: 'Form Rules',
+        items: ['Elbow min angle', 'Elbow max angle', 'Injury risk threshold', 'Confidence threshold'],
+      },
+      {
+        title: 'Display',
+        items: ['Language', 'Unit system', 'Theme', 'Compact mode'],
+      },
+    ],
+  },
+}
+
+function OverviewPage({ onCategoryClick }) {
+  return (
+    <section className="categoryGrid" aria-label="Dashboard categories">
+      {categories.map((item) => (
+        <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
+      ))}
+    </section>
+  )
+}
+
+function MockupPage({ page }) {
+  return (
+    <section className="mockupPage">
+      <div className="mockupHero">
+        <span>{page.kicker}</span>
+        <h2>{page.title}</h2>
+        <p>{page.description}</p>
+      </div>
+
+      <div className="mockupStats">
+        {page.primary.map(([label, value, note]) => (
+          <article key={label}>
+            <span>{label}</span>
+            <b>{value}</b>
+            <p>{note}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="mockupSections">
+        {page.sections.map((section) => (
+          <article key={section.title}>
+            <h3>{section.title}</h3>
+            <ul>
+              {section.items.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 function DetailModal({ category, onClose }) {
   if (!category) return null
 
@@ -432,20 +624,22 @@ function DetailModal({ category, onClose }) {
 }
 
 export default function App() {
+  const [activePage, setActivePage] = useState('overview')
   const [selectedId, setSelectedId] = useState(null)
   const selectedCategory = categories.find((item) => item.id === selectedId)
+  const currentMockup = pageMockups[activePage]
 
   return (
     <div className={`appShell ${selectedCategory ? 'isBlurred' : ''}`}>
       <div className="app">
-        <Sidebar />
+        <Sidebar activePage={activePage} onPageChange={setActivePage} />
         <main className="main">
-          <Header />
-          <section className="categoryGrid" aria-label="Dashboard categories">
-            {categories.map((item) => (
-              <CategoryCard item={item} key={item.id} onClick={() => setSelectedId(item.id)} />
-            ))}
-          </section>
+          <Header activePage={activePage} />
+          {activePage === 'overview' ? (
+            <OverviewPage onCategoryClick={setSelectedId} />
+          ) : (
+            <MockupPage page={currentMockup} />
+          )}
         </main>
       </div>
       <DetailModal category={selectedCategory} onClose={() => setSelectedId(null)} />

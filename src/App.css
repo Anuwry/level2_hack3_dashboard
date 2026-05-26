@@ -76,32 +76,36 @@ button {
   gap: 4px;
 }
 
-.nav a {
+.nav button {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   min-height: 38px;
   padding: 8px 11px;
   color: #cfdee8;
   font-size: 14px;
+  text-align: left;
   text-decoration: none;
   border: 1px solid transparent;
   border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
 }
 
-.nav a svg {
+.nav button svg {
   color: #93a9b8;
 }
 
-.nav a.active,
-.nav a:hover {
+.nav button.active,
+.nav button:hover {
   color: #fff;
   border-color: rgba(40, 215, 245, 0.32);
   background: rgba(40, 215, 245, 0.08);
 }
 
-.nav a.active svg,
-.nav a:hover svg {
+.nav button.active svg,
+.nav button:hover svg {
   color: var(--cyan);
 }
 
@@ -330,6 +334,105 @@ button {
   color: #b9cbd6;
   font-size: 12px;
   line-height: 1.42;
+}
+
+.mockupPage {
+  display: grid;
+  gap: 12px;
+}
+
+.mockupHero,
+.mockupStats article,
+.mockupSections article {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(13, 26, 38, 0.72);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.mockupHero {
+  padding: 18px;
+}
+
+.mockupHero span,
+.mockupStats span {
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mockupHero h2,
+.mockupHero p {
+  margin: 0;
+}
+
+.mockupHero h2 {
+  margin-top: 5px;
+  font-size: 24px;
+  line-height: 1.18;
+}
+
+.mockupHero p {
+  max-width: 720px;
+  margin-top: 8px;
+  color: #b9cbd6;
+  line-height: 1.5;
+}
+
+.mockupStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mockupStats article {
+  min-height: 112px;
+  padding: 14px;
+}
+
+.mockupStats b {
+  display: block;
+  margin-top: 6px;
+  font-size: 28px;
+}
+
+.mockupStats p {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mockupSections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mockupSections article {
+  padding: 14px;
+}
+
+.mockupSections h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.mockupSections ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mockupSections li {
+  padding: 9px 10px;
+  color: #d7e5ec;
+  font-size: 13px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(16, 34, 50, 0.44);
 }
 
 .modalOverlay {
@@ -953,6 +1056,8 @@ button {
 
 @media (max-width: 1180px) {
   .categoryGrid,
+  .mockupStats,
+  .mockupSections,
   .scoreGrid,
   .deviceGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -975,6 +1080,8 @@ button {
   }
 
   .categoryGrid,
+  .mockupStats,
+  .mockupSections,
   .scoreGrid,
   .detailGrid.twoCol,
   .formAnalysisDetail,
