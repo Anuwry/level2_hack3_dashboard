@@ -76,6 +76,25 @@ const kitDevices = [
   ['CHARGING CASE', 'charging-case.png'],
 ]
 
+const speedStats = [
+  { label: 'Max', value: '120', unit: 'km/h', tone: 'max' },
+  { label: 'Current', value: '50', unit: 'km/h', tone: 'current' },
+  { label: 'Previous', value: '80', unit: 'km/h', tone: 'previous' },
+]
+
+const gyroStats = [
+  { label: 'Max', value: '32.6', unit: 'm/s', tone: 'gyroMax' },
+  { label: 'Current', value: '28.4', unit: 'm/s', tone: 'gyroCurrent' },
+  { label: 'Previous', value: '25.1', unit: 'm/s', tone: 'gyroPrevious' },
+]
+
+const sweetSpotHits = [
+  { id: 1, x: 50, y: 46, score: 98, current: true },
+  { id: 2, x: 43, y: 38, score: 84 },
+  { id: 3, x: 57, y: 55, score: 81 },
+  { id: 4, x: 35, y: 64, score: 62 },
+]
+
 function Sidebar() {
   return (
     <aside className="sidebar">
@@ -171,6 +190,96 @@ function Panel({ title, children, className = '' }) {
   )
 }
 
+function ElbowAnalysis() {
+  return (
+    <>
+      <div className="elbowVisual">
+        <img className="panelImage compact" src={asset('elbows.png')} alt="Elbow form analysis" />
+        <svg className="elbowArc" viewBox="0 0 100 100" aria-hidden="true">
+          <path d="M 50 50 L 50 10" />
+          <path d="M 50 50 L 85 30" className="warningLine" />
+          <path d="M 50 20 A 30 30 0 0 1 78 35" className="recommendedArc" />
+          <path d="M 50 20 A 30 30 0 0 1 82 42" className="currentArc" />
+          <circle cx="50" cy="50" r="5" className="jointOuter" />
+          <circle cx="50" cy="50" r="3" className="jointInner" />
+          <text x="60" y="28">122°</text>
+        </svg>
+      </div>
+      <div className="elbowInfo">
+        <div className="elbowCurrent">
+          Current Angle: <strong>122°</strong>
+          <span>Recommended: 85°-105°</span>
+        </div>
+        <div className="elbowWarning">
+          <b>มุมข้อศอก &gt; 105° มีโอกาสผิดท่า</b>
+          <span>เสี่ยงต่อการบาดเจ็บ ควรงอข้อศอกให้มากขึ้น</span>
+        </div>
+        <div className="statusBadge">Incorrect Form</div>
+      </div>
+    </>
+  )
+}
+
+function SpeedGyroPanel() {
+  return (
+    <>
+      <div className="speedWrap">
+        <img className="panelImage speed" src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
+        <div className="speedTrail" />
+        <div className="speedOverlay">
+          {speedStats.map((item) => (
+            <div className={`speedStat ${item.tone}`} key={item.label}>
+              <span>{item.label}</span>
+              <b>{item.value}<small>{item.unit}</small></b>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="gyroBlock">
+        <h3>Gyro Swing Speed</h3>
+        <div className="gyroGrid">
+          {gyroStats.map((item) => (
+            <div className={`speedStat ${item.tone}`} key={item.label}>
+              <span>{item.label}</span>
+              <b>{item.value}<small>{item.unit}</small></b>
+            </div>
+          ))}
+        </div>
+      </div>
+    </>
+  )
+}
+
+function SweetSpotImpact() {
+  const currentHit = sweetSpotHits.find((hit) => hit.current)
+
+  return (
+    <>
+      <div className="sweetSpotStage">
+        <img className="panelImage compact" src={asset('racket.png')} alt="Racket sweet spot" />
+        <div className="sweetZone" aria-hidden="true" />
+        {sweetSpotHits.map((hit) => (
+          <span
+            className={`hitDot ${hit.current ? 'current' : ''}`}
+            key={hit.id}
+            style={{ left: `${hit.x}%`, top: `${hit.y}%` }}
+            title={`Impact score ${hit.score}`}
+          >
+            {hit.current ? hit.score : ''}
+          </span>
+        ))}
+      </div>
+      <div className="sweetScore">
+        <div>
+          <span>Impact Score</span>
+          <b>{currentHit.score}<small>/100</small></b>
+        </div>
+        <p>ยิ่งจุดกระทบใกล้กลางไม้ คะแนน sweet spot จะยิ่งสูง</p>
+      </div>
+    </>
+  )
+}
+
 function DeviceCard({ name, image }) {
   return (
     <div className="deviceCard">
@@ -194,7 +303,7 @@ export default function App() {
 
         <section className="analysisGrid">
           <Panel title="Elbow Form Analysis">
-            <img className="panelImage compact" src={asset('elbows.png')} alt="Elbow form analysis" />
+            <ElbowAnalysis />
           </Panel>
 
           <Panel title="Form Analysis">
@@ -212,14 +321,11 @@ export default function App() {
           </Panel>
 
           <Panel title="Speed (Gyro)">
-            <div className="speedWrap">
-              <img className="panelImage speed" src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
-              <div className="speedTrail" />
-            </div>
+            <SpeedGyroPanel />
           </Panel>
 
           <Panel title="Sweet Spot Impact">
-            <img className="panelImage compact" src={asset('racket.png')} alt="Racket sweet spot" />
+            <SweetSpotImpact />
           </Panel>
         </section>
 
