@@ -89,7 +89,7 @@ const gyroStats = [
 ]
 
 const sweetSpotHits = [
-  { id: 1, x: 68, y: 31, score: 98, current: true },
+  { id: 1, x: 72, y: 22, score: 98, current: true },
   { id: 2, x: 62, y: 25, score: 86 },
   { id: 3, x: 74, y: 37, score: 82 },
   { id: 4, x: 56, y: 43, score: 68 },
@@ -195,19 +195,11 @@ function ElbowAnalysis() {
     <>
       <div className="elbowVisual">
         <img className="elbowImage" src={asset('elbows.png')} alt="Elbow form analysis" />
-        <svg className="elbowGauge" viewBox="0 0 100 100" aria-hidden="true">
-          <path d="M 50 50 L 50 10" />
-          <path d="M 50 50 L 85 30" className="warningLine" />
-          <path d="M 50 20 A 30 30 0 0 1 78 35" className="recommendedArc" />
-          <path d="M 50 20 A 30 30 0 0 1 82 42" className="currentArc" />
-          <circle cx="50" cy="50" r="5" className="jointOuter" />
-          <circle cx="50" cy="50" r="3" className="jointInner" />
-          <text x="60" y="28">122°</text>
-        </svg>
         <svg className="elbowArmArc" viewBox="0 0 100 86" aria-hidden="true">
           <path className="armArcOuter" d="M 18 36 C 34 22 61 24 75 46" />
           <path className="armArcInner" d="M 42 37 C 51 43 57 53 59 66" />
           <circle cx="75" cy="46" r="4" />
+          <text x="68" y="31">122°</text>
         </svg>
       </div>
       <div className="elbowInfo">
@@ -264,7 +256,6 @@ function SweetSpotImpact() {
         <div className="sweetRacket">
           <img src={asset('racket.png')} alt="Racket sweet spot" />
           <div className="sweetZone" aria-hidden="true" />
-          <span className="missMark" aria-hidden="true">×</span>
           {sweetSpotHits.map((hit) => (
             <span
               className={`hitDot ${hit.current ? 'current' : ''}`}
