@@ -1,17 +1,17 @@
 :root {
   --bg: #071019;
-  --sidebar: #08121d;
-  --panel: #0d1a26;
-  --panel-soft: #102232;
-  --line: rgba(124, 170, 203, 0.18);
-  --text: #f3f8fb;
-  --muted: #91a8b7;
+  --sidebar: #07111a;
+  --panel: #0d1a24;
+  --panel-soft: #101f2b;
+  --line: rgba(138, 174, 199, 0.14);
+  --text: #f2f7fa;
+  --muted: #8fa4b2;
   --blue: #2b8cff;
   --cyan: #28d7f5;
   --green: #29e38c;
   --orange: #ffac38;
   --red: #ff5c62;
-  --shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+  --shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
 }
 
 * {
@@ -29,10 +29,7 @@ body {
   min-width: 320px;
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background:
-    radial-gradient(circle at 72% -10%, rgba(43, 140, 255, 0.2), transparent 34%),
-    radial-gradient(circle at 10% 8%, rgba(41, 227, 140, 0.08), transparent 28%),
-    var(--bg);
+  background: var(--bg);
 }
 
 button,
@@ -42,7 +39,7 @@ a {
 
 .app {
   display: grid;
-  grid-template-columns: 232px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -50,32 +47,33 @@ a {
   position: sticky;
   top: 0;
   height: 100vh;
-  padding: 22px 14px;
+  padding: 20px 12px;
   border-right: 1px solid var(--line);
-  background: rgba(6, 15, 24, 0.82);
+  background: var(--sidebar);
 }
 
 .logo {
-  width: 142px;
+  width: 126px;
   height: auto;
-  margin: 0 10px 24px;
+  margin: 0 10px 22px;
 }
 
 .nav {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .nav a {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 42px;
-  padding: 10px 12px;
+  gap: 10px;
+  min-height: 38px;
+  padding: 8px 11px;
   color: #cfdee8;
+  font-size: 14px;
   text-decoration: none;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 7px;
 }
 
 .nav a svg {
@@ -84,9 +82,9 @@ a {
 
 .nav a.active,
 .nav a:hover {
-  color: #ffffff;
-  border-color: rgba(40, 215, 245, 0.38);
-  background: rgba(40, 215, 245, 0.1);
+  color: #fff;
+  border-color: rgba(40, 215, 245, 0.32);
+  background: rgba(40, 215, 245, 0.08);
 }
 
 .nav a.active svg,
@@ -95,11 +93,11 @@ a {
 }
 
 .deviceRail {
-  margin-top: 26px;
-  padding: 14px;
+  margin-top: 22px;
+  padding: 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(13, 26, 38, 0.68);
+  border-radius: 8px;
+  background: rgba(13, 26, 38, 0.52);
 }
 
 .railHeader {
@@ -107,12 +105,12 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .railHeader h2 {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .railHeader span,
@@ -122,15 +120,15 @@ a {
   align-items: center;
   gap: 5px;
   color: var(--green);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .railDevice {
   display: grid;
-  grid-template-columns: 34px 1fr 9px;
-  gap: 10px;
+  grid-template-columns: 32px 1fr 8px;
+  gap: 9px;
   align-items: center;
-  padding: 8px 0;
+  padding: 7px 0;
 }
 
 .railDevice:not(:last-child) {
@@ -138,8 +136,8 @@ a {
 }
 
 .railDevice img {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   object-fit: contain;
 }
 
@@ -149,29 +147,29 @@ a {
 }
 
 .railDevice b {
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .railDevice i {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: var(--green);
 }
 
 .main {
   width: 100%;
-  max-width: 1480px;
+  max-width: 1380px;
   min-width: 0;
-  padding: 24px 28px 34px;
+  padding: 20px 24px 30px;
 }
 
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 22px;
-  margin-bottom: 18px;
+  gap: 18px;
+  margin-bottom: 14px;
 }
 
 .header p,
@@ -182,22 +180,23 @@ a {
 
 .header p {
   color: var(--green);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .header h1 {
   margin-top: 4px;
-  font-size: clamp(32px, 3vw, 46px);
-  line-height: 1.02;
+  font-size: clamp(26px, 2.4vw, 36px);
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
 .header span {
   display: block;
-  margin-top: 8px;
+  margin-top: 5px;
   color: var(--muted);
+  font-size: 14px;
 }
 
 .headerStatus {
@@ -211,17 +210,17 @@ a {
 .playerPill {
   display: grid;
   align-items: center;
-  min-width: 150px;
-  min-height: 62px;
-  padding: 10px 14px;
+  min-width: 136px;
+  min-height: 52px;
+  padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(13, 26, 38, 0.74);
+  border-radius: 8px;
+  background: rgba(13, 26, 38, 0.6);
 }
 
 .connectPill {
-  grid-template-columns: 30px 1fr;
-  column-gap: 10px;
+  grid-template-columns: 28px 1fr;
+  column-gap: 9px;
 }
 
 .connectPill svg {
@@ -230,15 +229,15 @@ a {
 }
 
 .playerPill {
-  grid-template-columns: 42px 1fr;
-  column-gap: 11px;
+  grid-template-columns: 38px 1fr;
+  column-gap: 10px;
 }
 
 .playerPill div {
   display: grid;
   grid-row: span 2;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   color: #061119;
   font-weight: 900;
@@ -249,34 +248,31 @@ a {
 .connectPill span,
 .playerPill span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .connectPill b,
 .playerPill b {
   color: var(--green);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .focusBanner,
 .card,
 .scoreCard {
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(13, 26, 38, 0.82);
+  border-radius: 8px;
+  background: rgba(13, 26, 38, 0.72);
   box-shadow: var(--shadow);
 }
 
 .focusBanner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  gap: 16px;
   align-items: center;
-  margin-bottom: 14px;
-  padding: 20px;
-  background:
-    linear-gradient(90deg, rgba(43, 140, 255, 0.2), rgba(41, 227, 140, 0.08)),
-    rgba(13, 26, 38, 0.88);
+  margin-bottom: 12px;
+  padding: 14px 16px;
 }
 
 .focusBanner p,
@@ -287,21 +283,22 @@ a {
 
 .focusBanner p {
   color: var(--cyan);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .focusBanner h2 {
-  margin-top: 5px;
-  font-size: 24px;
-  line-height: 1.24;
+  margin-top: 4px;
+  font-size: 18px;
+  line-height: 1.3;
 }
 
 .focusBanner span {
   display: block;
-  margin-top: 8px;
-  color: #c2d2dc;
+  margin-top: 5px;
+  color: #bfced8;
+  font-size: 13px;
 }
 
 .focusScore {
@@ -317,31 +314,31 @@ a {
 
 .focusScore b {
   color: var(--green);
-  font-size: 52px;
+  font-size: 36px;
   line-height: 0.95;
 }
 
 .scoreGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 
 .scoreCard {
   display: grid;
-  grid-template-columns: 46px 1fr;
-  gap: 14px;
-  min-height: 132px;
-  padding: 16px;
+  grid-template-columns: 38px 1fr;
+  gap: 12px;
+  min-height: 104px;
+  padding: 13px;
 }
 
 .scoreIcon {
   display: grid;
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   place-items: center;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .scoreCard.blue .scoreIcon,
@@ -363,7 +360,7 @@ a {
 .callout span,
 .speedBody span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -371,26 +368,26 @@ a {
 .scoreCard b {
   display: block;
   margin-top: 4px;
-  font-size: 34px;
+  font-size: 26px;
   line-height: 1;
 }
 
 .scoreCard small {
   margin-left: 4px;
   color: var(--muted);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 500;
 }
 
 .scoreCard p {
-  margin: 8px 0 10px;
+  margin: 6px 0 8px;
   color: #b9cbd6;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .scoreCard i {
   display: block;
-  height: 6px;
+  height: 5px;
   border-radius: 99px;
   background: currentColor;
 }
@@ -410,64 +407,64 @@ a {
 
 .primaryGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.92fr) minmax(300px, 0.86fr);
-  gap: 14px;
-  margin-top: 14px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.84fr) minmax(260px, 0.8fr);
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .secondaryGrid {
   display: grid;
-  grid-template-columns: 0.9fr 0.8fr 1.15fr;
-  gap: 14px;
-  margin-top: 14px;
+  grid-template-columns: 0.82fr 0.78fr 1.1fr;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .bottomGrid {
   display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 14px;
-  margin-top: 14px;
+  grid-template-columns: 1fr 240px;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .card {
   min-width: 0;
-  padding: 18px;
+  padding: 14px;
 }
 
 .sectionTitle {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .sectionTitle h2 {
-  margin: 4px 0 0;
-  font-size: 19px;
+  margin: 3px 0 0;
+  font-size: 16px;
   line-height: 1.2;
 }
 
 .visualCard {
-  min-height: 380px;
+  min-height: 316px;
 }
 
 .elbowContent {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 188px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 12px;
 }
 
 .elbowStage,
 .sweetStage {
   position: relative;
   display: grid;
-  min-height: 286px;
+  min-height: 236px;
   place-items: center;
   overflow: hidden;
-  border-radius: 10px;
-  background: rgba(5, 15, 24, 0.72);
+  border-radius: 8px;
+  background: rgba(5, 15, 24, 0.68);
 }
 
 .elbowStage img {
-  width: min(92%, 430px);
-  max-height: 310px;
+  width: min(92%, 390px);
+  max-height: 250px;
   object-fit: contain;
 }
 
@@ -475,8 +472,8 @@ a {
   position: absolute;
   left: 58%;
   top: 62%;
-  width: 96px;
-  height: 82px;
+  width: 82px;
+  height: 70px;
   overflow: visible;
   transform: translate(-50%, -50%);
 }
@@ -509,27 +506,27 @@ a {
 
 .calloutList {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   align-content: center;
 }
 
 .callout {
-  padding: 14px;
+  padding: 11px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(16, 34, 50, 0.7);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.58);
 }
 
 .callout b {
   display: block;
   margin-top: 5px;
-  font-size: 30px;
+  font-size: 24px;
 }
 
 .callout p {
   margin: 6px 0 0;
   color: #bfd0da;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -542,12 +539,12 @@ a {
 }
 
 .sweetStage {
-  min-height: 286px;
+  min-height: 236px;
 }
 
 .racketWrap {
   position: relative;
-  width: min(100%, 310px);
+  width: min(100%, 245px);
   aspect-ratio: 1 / 1;
 }
 
@@ -563,8 +560,8 @@ a {
   position: absolute;
   left: 68%;
   top: 31%;
-  width: 58px;
-  height: 68px;
+  width: 50px;
+  height: 60px;
   border: 2px solid rgba(41, 227, 140, 0.74);
   border-radius: 50%;
   background: rgba(41, 227, 140, 0.1);
@@ -576,16 +573,16 @@ a {
   left: 72%;
   top: 22%;
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   color: #03130b;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 900;
   border: 2px solid #fff;
   border-radius: 50%;
   background: var(--green);
-  box-shadow: 0 0 18px rgba(41, 227, 140, 0.88);
+  box-shadow: 0 0 14px rgba(41, 227, 140, 0.7);
   transform: translate(-50%, -50%);
 }
 
@@ -594,11 +591,11 @@ a {
   grid-template-columns: 1fr auto;
   gap: 4px 12px;
   align-items: baseline;
-  margin-top: 14px;
-  padding: 14px;
-  border: 1px solid rgba(41, 227, 140, 0.22);
-  border-radius: 10px;
-  background: rgba(41, 227, 140, 0.07);
+  margin-top: 10px;
+  padding: 11px;
+  border: 1px solid rgba(41, 227, 140, 0.2);
+  border-radius: 8px;
+  background: rgba(41, 227, 140, 0.06);
 }
 
 .impactSummary span,
@@ -608,27 +605,28 @@ a {
 
 .impactSummary b {
   color: var(--green);
-  font-size: 34px;
+  font-size: 26px;
 }
 
 .impactSummary small {
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .impactSummary p {
   grid-column: 1 / -1;
   margin: 0;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .advicePrimary {
   display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgba(40, 215, 245, 0.16), rgba(41, 227, 140, 0.09));
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(40, 215, 245, 0.08);
 }
 
 .advicePrimary svg {
@@ -643,82 +641,85 @@ a {
 .advicePrimary p {
   margin-top: 6px;
   color: #c2d1db;
-  line-height: 1.5;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .cleanList {
   display: grid;
-  gap: 10px;
-  margin: 14px 0 0;
+  gap: 8px;
+  margin: 12px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .cleanList li {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 24px 1fr;
   gap: 10px;
   align-items: center;
   color: #dce8ee;
+  font-size: 13px;
 }
 
 .cleanList span {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   place-items: center;
   color: var(--cyan);
-  border: 1px solid rgba(40, 215, 245, 0.32);
-  border-radius: 8px;
-  background: rgba(40, 215, 245, 0.08);
+  font-size: 12px;
+  border: 1px solid rgba(40, 215, 245, 0.28);
+  border-radius: 7px;
+  background: rgba(40, 215, 245, 0.07);
 }
 
 .summaryGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 
 .summaryGrid div {
-  min-height: 76px;
-  padding: 13px;
+  min-height: 64px;
+  padding: 11px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(16, 34, 50, 0.62);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.52);
 }
 
 .summaryGrid b {
   display: block;
   margin-top: 7px;
-  font-size: 28px;
+  font-size: 22px;
 }
 
 .speedBody {
   display: grid;
-  grid-template-columns: 1fr 150px;
-  gap: 16px;
+  grid-template-columns: 1fr 128px;
+  gap: 12px;
   align-items: center;
 }
 
 .speedBody img {
   width: 100%;
-  max-height: 150px;
+  max-height: 120px;
   object-fit: contain;
-  filter: drop-shadow(0 0 14px rgba(40, 215, 245, 0.36));
+  filter: drop-shadow(0 0 12px rgba(40, 215, 245, 0.28));
 }
 
 .speedBody b {
   display: block;
   margin: 4px 0 12px;
   color: var(--cyan);
-  font-size: 30px;
+  font-size: 24px;
   line-height: 1;
 }
 
 .speedBody small {
   margin-left: 4px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .greenText {
@@ -727,18 +728,18 @@ a {
 
 .shotList {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .shotRow {
   display: grid;
-  grid-template-columns: 32px 72px 92px 74px 48px;
-  gap: 10px;
+  grid-template-columns: 28px 64px 82px 68px 42px;
+  gap: 8px;
   align-items: center;
-  min-height: 36px;
-  padding-bottom: 8px;
+  min-height: 32px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .shotRow span,
@@ -761,34 +762,34 @@ a {
 }
 
 .devicesCard {
-  min-height: 210px;
+  min-height: 170px;
 }
 
 .deviceGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .deviceTile {
-  min-height: 136px;
-  padding: 12px;
+  min-height: 116px;
+  padding: 10px;
   text-align: center;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(16, 34, 50, 0.62);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.52);
 }
 
 .deviceTile img {
   width: 100%;
-  height: 78px;
+  height: 62px;
   object-fit: contain;
 }
 
 .deviceTile b {
   display: block;
   margin: 7px 0 5px;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .deviceTile span {
@@ -798,7 +799,7 @@ a {
 .actionCard {
   display: grid;
   align-content: start;
-  gap: 10px;
+  gap: 8px;
 }
 
 .actionCard button {
@@ -806,18 +807,18 @@ a {
   align-items: center;
   justify-content: center;
   gap: 9px;
-  min-height: 44px;
+  min-height: 40px;
   color: #eaf7fb;
-  font-weight: 800;
+  font-weight: 700;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgba(16, 34, 50, 0.74);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.58);
   cursor: pointer;
 }
 
 .actionCard button:first-child {
-  border-color: rgba(41, 227, 140, 0.34);
-  background: rgba(41, 227, 140, 0.12);
+  border-color: rgba(41, 227, 140, 0.3);
+  background: rgba(41, 227, 140, 0.1);
 }
 
 @media (max-width: 1280px) {
@@ -844,16 +845,18 @@ a {
     height: auto;
   }
 
-  .header,
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .focusBanner {
     grid-template-columns: 1fr;
-    flex-direction: column;
-    align-items: flex-start;
   }
 
   .focusScore {
     width: 100%;
-    padding-top: 14px;
+    padding-top: 12px;
     border-top: 1px solid var(--line);
     border-left: 0;
   }
