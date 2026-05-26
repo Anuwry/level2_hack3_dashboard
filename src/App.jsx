@@ -9,6 +9,7 @@ import {
   Gauge,
   Home,
   Medal,
+  Menu,
   Play,
   Radar,
   Settings,
@@ -16,6 +17,7 @@ import {
   Sparkles,
   Target,
   Upload,
+  Users,
   Video,
   Zap,
 } from 'lucide-react'
@@ -28,76 +30,82 @@ const navItems = [
   { label: 'วิเคราะห์ช็อต', icon: Radar },
   { label: 'รายงานการเล่น', icon: ChartNoAxesCombined },
   { label: 'เซ็นเซอร์', icon: Activity },
+  { label: 'ผู้เล่น', icon: Users },
   { label: 'การตั้งค่า', icon: Settings },
 ]
 
-const devices = [
+const connectedDevices = [
   ['Sensor Core', 'core-sensor.png'],
   ['Wrist Band', 'wrist-band.png'],
   ['AI Coach Hub', 'ai-coach-hub.png'],
+  ['Pro Motion Coach', 'pro-motion-coach.png'],
+  ['Wrist Sensor', 'wrist-sensor.png'],
   ['Sensor Pod', 'sensor-pod.png'],
 ]
 
 const metrics = [
-  { label: 'Power Score', value: '84', unit: '/100', icon: Zap, progress: 84, change: '+12% จากครั้งก่อน' },
-  { label: 'Timing Score', value: '68', unit: '/100', icon: Clock3, progress: 68, change: '+8% จากครั้งก่อน' },
+  { label: 'Power Score', value: '84', unit: '/100', icon: Zap, progress: 84, change: '+12% จากครั้งก่อน', tone: 'blue' },
+  { label: 'Timing Score', value: '68', unit: '/100', icon: Clock3, progress: 68, change: '+8% จากครั้งก่อน', tone: 'blue' },
   { label: 'Sweet Spot Score', value: '88', unit: '/100', icon: Target, progress: 88, change: '+15% จากครั้งก่อน', tone: 'green' },
   { label: 'Injury Risk', value: 'Medium', icon: ShieldAlert, note: 'เสี่ยงปานกลาง', tone: 'orange' },
-  { label: 'Session Time', value: '00:18:36', icon: Gauge, note: 'เวลาฝึกซ้อมวันนี้' },
+  { label: 'Session Time', value: '00:18:36', icon: Gauge, note: 'เวลาในการฝึกซ้อมวันนี้', tone: 'blue' },
 ]
+
+const formStats = [
+  ['Elbow Incorrect', 'Used for Injury Risk', '12', 'red'],
+  ['Incorrect Shots', '', '12', 'orange'],
+  ['Correct Shots', '', '28', 'green'],
+  ['Total Shots', '', '40', 'blue'],
+]
+
+const speedHistory = ['205', '214', '198', '221', '209']
 
 const summary = [
   ['Total Shots', '40'],
-  ['Best Shot', 'Smash #24'],
-  ['Calories', '210'],
+  ['Best Shot', 'Smash #24', 'Power 98'],
+  ['Calories', '210 kcal'],
   ['Avg Power', '76.5'],
   ['Max Power', '98'],
   ['Consistency', '72%'],
 ]
 
 const suggestions = [
-  ['เพิ่มความแม่นยำในการ Smash', 'โฟกัสตำแหน่ง sweet spot ให้มากขึ้น', 'ฝึกทันที', 'blue'],
-  ['ปรับจังหวะ Timing', 'พยายามให้เร็วขึ้นอีกเล็กน้อย', 'ฝึกทันที', 'orange'],
-  ['เพิ่มความหลากหลาย', 'สลับใช้งาน Drop และ Drive ให้มากขึ้น', 'แนะนำ', 'green'],
+  ['เพิ่มความแม่นยำในการ Smash', 'โฟกัสตำแหน่ง sweet spot มากขึ้น', 'ฝึกทันที', 'blue'],
+  ['ปรับจังหวะ Timing', 'พยายามให้เริ่มตีเร็วขึ้นเล็กน้อย', 'ฝึกทันที', 'orange'],
+  ['เพิ่มความหลากหลาย', 'สลับใช้ Drop และ Drive ให้มากขึ้น', 'แนะนำ', 'green'],
 ]
 
 const recentShots = [
-  ['#40 Smash', 'Sweet Spot', 'green'],
-  ['#39 Clear', 'Timing', 'blue'],
-  ['#38 Drop', 'Timing', 'blue'],
-  ['#37 Smash', 'Sweet Spot', 'green'],
-  ['#36 Drive', 'Good', 'green'],
+  ['40', 'Smash', 'Power: 92', 'Sweet Spot', '01:18', 'green'],
+  ['39', 'Clear', 'Power: 78', 'Timing', '01:16', 'blue'],
+  ['38', 'Drop', 'Power: 65', 'Timing', '01:14', 'blue'],
+  ['37', 'Smash', 'Power: 95', 'Sweet Spot', '01:12', 'green'],
+  ['36', 'Drive', 'Power: 70', 'Good', '01:10', 'green'],
 ]
 
-const kitDevices = [
+const sensorCards = [
+  ['CORE SENSOR', 'core-sensor.png'],
+  ['WRIST BAND', 'wrist-band.png'],
+  ['AI COACH HUB', 'ai-coach-hub.png'],
+]
+
+const kitCards = [
   ['PRO MOTION COACH', 'pro-motion-coach.png'],
   ['WRIST SENSOR', 'wrist-sensor.png'],
   ['SENSOR POD', 'sensor-pod.png'],
   ['CHARGING CASE', 'charging-case.png'],
 ]
 
-const speedStats = [
-  { label: 'Max', value: '120', unit: 'km/h', tone: 'max' },
-  { label: 'Current', value: '50', unit: 'km/h', tone: 'current' },
-  { label: 'Previous', value: '80', unit: 'km/h', tone: 'previous' },
-]
-
-const gyroStats = [
-  { label: 'Max', value: '32.6', unit: 'm/s', tone: 'gyroMax' },
-  { label: 'Current', value: '28.4', unit: 'm/s', tone: 'gyroCurrent' },
-  { label: 'Previous', value: '25.1', unit: 'm/s', tone: 'gyroPrevious' },
-]
-
-const sweetSpotHits = [
-  { id: 1, x: 72, y: 22, score: 98, current: true },
-]
+const sweetSpotHit = { x: 72, y: 22, score: 98 }
 
 function Sidebar() {
   return (
     <aside className="sidebar">
-      <div className="logo">
+      <div className="logoRow">
         <img src={asset('ai-coach-logo.png')} alt="AI Coach logo" />
+        <Menu size={18} />
       </div>
+
       <nav className="nav" aria-label="Dashboard navigation">
         {navItems.map(({ label, icon: Icon, active }) => (
           <a className={active ? 'active' : ''} href="#" key={label}>
@@ -106,12 +114,14 @@ function Sidebar() {
           </a>
         ))}
       </nav>
+
       <section className="miniStatus" aria-label="Connected devices">
         <div className="miniTitle">
           <h2>อุปกรณ์เชื่อมต่อ</h2>
-          <span><BatteryFull size={16} />100%</span>
+          <span><BatteryFull size={15} />100%</span>
         </div>
-        {devices.map(([name, image]) => (
+
+        {connectedDevices.map(([name, image]) => (
           <div className="miniRow" key={name}>
             <img src={asset(image)} alt={name} />
             <div>
@@ -121,6 +131,9 @@ function Sidebar() {
             <i />
           </div>
         ))}
+
+        <button className="syncButton" type="button">ซิงค์ข้อมูลล่าสุด</button>
+        <p className="syncText">อัปเดต 1 นาทีที่แล้ว</p>
       </section>
     </aside>
   )
@@ -130,7 +143,6 @@ function Header() {
   return (
     <header className="topbar">
       <div className="title">
-        <p>Live training session</p>
         <h1>Badminton AI Coach Dashboard</h1>
         <span>วิเคราะห์ทุกช็อต พัฒนาทุกเกม</span>
       </div>
@@ -143,7 +155,7 @@ function Header() {
           </div>
         </div>
         <div className="pill player">
-          <img src={asset('dashboard-preview.png')} alt="Player profile" />
+          <div className="avatar">01</div>
           <div>
             <b>Player 01</b>
             <span>Level Intermediate</span>
@@ -159,7 +171,7 @@ function MetricCard({ metric }) {
   return (
     <article className={`card metric ${metric.tone || ''}`}>
       <div className="metricHeader">
-        <Icon size={20} />
+        <Icon size={32} />
         <h2>{metric.label}</h2>
       </div>
       <div className="metricValue">
@@ -169,7 +181,7 @@ function MetricCard({ metric }) {
       {metric.progress ? (
         <>
           <div className="bar"><i style={{ width: `${metric.progress}%` }} /></div>
-          <p className="delta">{metric.change}</p>
+          <p className="delta">▲ {metric.change}</p>
         </>
       ) : (
         <p className="note">{metric.note}</p>
@@ -189,7 +201,7 @@ function Panel({ title, children, className = '' }) {
 
 function ElbowAnalysis() {
   return (
-    <>
+    <div className="elbowPanelLayout">
       <div className="elbowVisual">
         <img className="elbowImage" src={asset('elbows.png')} alt="Elbow form analysis" />
         <svg className="elbowArmArc" viewBox="0 0 100 86" aria-hidden="true">
@@ -199,80 +211,77 @@ function ElbowAnalysis() {
           <text x="68" y="31">122°</text>
         </svg>
       </div>
+
       <div className="elbowInfo">
-        <div className="elbowCurrent">
-          Current Angle: <strong>122°</strong>
-          <span>Recommended: 85°-105°</span>
-        </div>
-        <div className="elbowWarning">
-          <b>มุมข้อศอก &gt; 105° มีโอกาสผิดท่า</b>
-          <span>เสี่ยงต่อการบาดเจ็บ ควรงอข้อศอกให้มากขึ้น</span>
-        </div>
+        <p>Recommended Range</p>
+        <strong className="range">85°-105°</strong>
+        <p>Current Angle</p>
+        <strong className="angle">122°</strong>
         <div className="statusBadge">Incorrect Form</div>
+        <span>อยู่ในช่วงที่เพิ่มความเสี่ยง บาดเจ็บได้ง่าย</span>
       </div>
-    </>
+    </div>
+  )
+}
+
+function FormAnalysis() {
+  return (
+    <div className="formGrid">
+      <div className="donut">
+        <div><b>40</b><span>Total Shots</span></div>
+      </div>
+      <div className="statList">
+        {formStats.map(([label, note, value, tone]) => (
+          <div className={`stat ${tone}`} key={label}>
+            <span>{label}{note && <small>{note}</small>}</span>
+            <strong>{value}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
 
 function SpeedGyroPanel() {
   return (
-    <>
-      <div className="speedWrap">
-        <img className="panelImage speed" src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
-        <div className="speedTrail" />
-        <div className="speedOverlay">
-          {speedStats.map((item) => (
-            <div className={`speedStat ${item.tone}`} key={item.label}>
-              <span>{item.label}</span>
-              <b>{item.value}<small>{item.unit}</small></b>
-            </div>
-          ))}
-        </div>
+    <div className="speedPanel">
+      <div className="speedVisual">
+        <img className="speed" src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
       </div>
-      <div className="gyroBlock">
-        <h3>Gyro Swing Speed</h3>
-        <div className="gyroGrid">
-          {gyroStats.map((item) => (
-            <div className={`speedStat ${item.tone}`} key={item.label}>
-              <span>{item.label}</span>
-              <b>{item.value}<small>{item.unit}</small></b>
-            </div>
-          ))}
-        </div>
+      <div className="speedNumbers">
+        <div><span>Max Speed</span><b>276<small>km/h</small></b></div>
+        <div><span>Average Speed</span><b>198<small>km/h</small></b></div>
+        <div><span>Swing Acceleration</span><b>32.6<small>m/s²</small></b></div>
       </div>
-    </>
+      <div className="speedHistory" aria-label="Recent swing speeds">
+        {speedHistory.map((speed) => <span key={speed}>{speed}</span>)}
+      </div>
+    </div>
   )
 }
 
 function SweetSpotImpact() {
-  const currentHit = sweetSpotHits.find((hit) => hit.current)
-
   return (
-    <>
+    <div className="sweetPanel">
       <div className="sweetSpotStage">
         <div className="sweetRacket">
           <img src={asset('racket.png')} alt="Racket sweet spot" />
           <div className="sweetZone" aria-hidden="true" />
-          {sweetSpotHits.map((hit) => (
-            <span
-              className={`hitDot ${hit.current ? 'current' : ''}`}
-              key={hit.id}
-              style={{ left: `${hit.x}%`, top: `${hit.y}%` }}
-              title={`Impact score ${hit.score}`}
-            >
-              {hit.current ? hit.score : ''}
-            </span>
-          ))}
+          <span
+            className="hitDot current"
+            style={{ left: `${sweetSpotHit.x}%`, top: `${sweetSpotHit.y}%` }}
+            title={`Impact score ${sweetSpotHit.score}`}
+          >
+            {sweetSpotHit.score}
+          </span>
         </div>
       </div>
-      <div className="sweetScore">
-        <div>
-          <span>Impact Score</span>
-          <b>{currentHit.score}<small>/100</small></b>
-        </div>
-        <p>ยิ่งจุดกระทบใกล้กลางไม้ คะแนน sweet spot จะยิ่งสูง</p>
+      <div className="impactScale">
+        <span>Low Impact</span>
+        <i />
+        <span>High Impact</span>
       </div>
-    </>
+    </div>
   )
 }
 
@@ -281,7 +290,7 @@ function DeviceCard({ name, image }) {
     <div className="deviceCard">
       <img src={asset(image)} alt={name} />
       <b>{name}</b>
-      <span><BatteryFull size={14} />100% Connected</span>
+      <span><BatteryFull size={14} />100% <i /> Connected</span>
     </div>
   )
 }
@@ -298,28 +307,15 @@ export default function App() {
         </section>
 
         <section className="analysisGrid">
-          <Panel title="Elbow Form Analysis">
+          <Panel title="Elbow Form Analysis" className="elbowPanel">
             <ElbowAnalysis />
           </Panel>
-
-          <Panel title="Form Analysis">
-            <div className="formGrid">
-              <div className="donut">
-                <div><b>40</b><span>Total Shots</span></div>
-              </div>
-              <div className="statList">
-                <div className="stat red"><span>Elbow Incorrect<small>Used for Injury Risk</small></span><strong>12</strong></div>
-                <div className="stat red"><span>Incorrect Shots</span><strong>12</strong></div>
-                <div className="stat green"><span>Correct Shots</span><strong>28</strong></div>
-                <div className="stat blue"><span>Total Shots</span><strong>40</strong></div>
-              </div>
-            </div>
+          <Panel title="Form Analysis (Elbow & Shots)">
+            <FormAnalysis />
           </Panel>
-
           <Panel title="Speed (Gyro)">
             <SpeedGyroPanel />
           </Panel>
-
           <Panel title="Sweet Spot Impact">
             <SweetSpotImpact />
           </Panel>
@@ -328,20 +324,22 @@ export default function App() {
         <section className="insightGrid">
           <Panel title="Session Summary">
             <div className="summaryGrid">
-              {summary.map(([label, value]) => (
+              {summary.map(([label, value, note]) => (
                 <div className="summaryItem" key={label}>
                   <span>{label}</span>
                   <b>{value}</b>
+                  {note && <small>{note}</small>}
                 </div>
               ))}
             </div>
+            <button className="panelButton" type="button">ดูรายงานฉบับเต็ม</button>
           </Panel>
 
           <Panel title="AI Coach Suggestion">
             <div className="suggestions">
               {suggestions.map(([title, body, tag, tone]) => (
                 <div className="suggestion" key={title}>
-                  <Sparkles className={tone} size={25} />
+                  <Sparkles className={tone} size={24} />
                   <div>
                     <b>{title}</b>
                     <span>{body}</span>
@@ -350,39 +348,44 @@ export default function App() {
                 </div>
               ))}
             </div>
+            <button className="panelButton" type="button">ดูแผนการฝึกแนะนำ</button>
           </Panel>
 
           <Panel title="Recent Shots">
-            <div className="statList">
-              {recentShots.map(([shot, result, tone]) => (
-                <div className="shotRow" key={shot}>
-                  <span>{shot}</span>
-                  <b className={tone}>{result}</b>
+            <div className="shotList">
+              {recentShots.map(([id, shot, power, result, time, tone]) => (
+                <div className="shotRow" key={id}>
+                  <span>{id}</span>
+                  <b>{shot}</b>
+                  <small>{power}</small>
+                  <strong className={tone}>{result}</strong>
+                  <time>{time}</time>
                 </div>
               ))}
             </div>
+            <button className="panelButton" type="button">ดูเพิ่มเติม</button>
           </Panel>
         </section>
 
         <section className="deviceGrid">
           <Panel title="Sensor Status">
             <div className="deviceList">
-              {devices.slice(0, 3).map(([name, image]) => <DeviceCard name={name.toUpperCase()} image={image} key={name} />)}
+              {sensorCards.map(([name, image]) => <DeviceCard name={name} image={image} key={name} />)}
             </div>
           </Panel>
 
           <Panel title="Coach Kit Status">
             <div className="kitList">
-              {kitDevices.map(([name, image]) => <DeviceCard name={name} image={image} key={name} />)}
+              {kitCards.map(([name, image]) => <DeviceCard name={name} image={image} key={name} />)}
             </div>
           </Panel>
 
           <Panel title="Quick Action" className="quickPanel">
             <div className="quickActions">
-              <button type="button"><Play size={20} />เริ่มการฝึกซ้อมใหม่</button>
-              <button type="button"><Video size={20} />วิเคราะห์วิดีโอ</button>
-              <button type="button"><Upload size={20} />อัปโหลดเซสชัน</button>
-              <button type="button"><Medal size={20} />ดูเป้าหมาย</button>
+              <button type="button"><Play size={19} />เริ่มการฝึกซ้อมใหม่</button>
+              <button type="button"><Video size={19} />วิเคราะห์วิดีโอ</button>
+              <button type="button"><Upload size={19} />อัปโหลดเซสชัน</button>
+              <button type="button"><Medal size={19} />ดูเป้าหมาย</button>
             </div>
           </Panel>
         </section>
