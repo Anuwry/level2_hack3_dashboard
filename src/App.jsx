@@ -72,6 +72,77 @@ const recentShots = [
   ['37', 'Smash', 'Sweet Spot', '95', '01:12', 'green'],
 ]
 
+const visualizationSets = {
+  shotList: {
+    title: 'Shot List Visualization',
+    description: 'Recent shot quality by score and result label.',
+    fileName: 'shot-list.csv',
+    rows: [
+      { label: '#40 Smash', value: 92, secondary: 'Sweet Spot' },
+      { label: '#39 Clear', value: 78, secondary: 'Timing' },
+      { label: '#38 Drop', value: 65, secondary: 'Timing' },
+      { label: '#37 Smash', value: 95, secondary: 'Sweet Spot' },
+      { label: '#36 Drive', value: 70, secondary: 'Good' },
+    ],
+  },
+  sessionHistory: {
+    title: 'Session History Visualization',
+    description: 'Overall training score across recent sessions.',
+    fileName: 'session-history.csv',
+    rows: [
+      { label: 'May 01', value: 74, secondary: '34 shots' },
+      { label: 'May 08', value: 78, secondary: '38 shots' },
+      { label: 'May 15', value: 80, secondary: '42 shots' },
+      { label: 'May 22', value: 83, secondary: '40 shots' },
+      { label: 'May 26', value: 88, secondary: '40 shots' },
+    ],
+  },
+  trendCharts: {
+    title: 'Training Trend Visualization',
+    description: 'Power, timing, sweet spot, and consistency score trend.',
+    fileName: 'training-trends.csv',
+    rows: [
+      { label: 'Power', value: 84, secondary: '+12%' },
+      { label: 'Timing', value: 68, secondary: '+8%' },
+      { label: 'Sweet Spot', value: 88, secondary: '+15%' },
+      { label: 'Consistency', value: 72, secondary: '+6%' },
+    ],
+  },
+  deviceHealth: {
+    title: 'Sensor Health Visualization',
+    description: 'Battery and connection readiness per device.',
+    fileName: 'sensor-health.csv',
+    rows: [
+      { label: 'Core Sensor', value: 100, secondary: 'Connected' },
+      { label: 'Wrist Band', value: 96, secondary: 'Connected' },
+      { label: 'AI Coach Hub', value: 100, secondary: 'Connected' },
+      { label: 'Sensor Pod', value: 94, secondary: 'Connected' },
+    ],
+  },
+  liveFeedback: {
+    title: 'Live Feedback Visualization',
+    description: 'Latest feedback signals from the current training session.',
+    fileName: 'live-feedback.csv',
+    rows: [
+      { label: 'Impact', value: 98, secondary: 'Sweet Spot' },
+      { label: 'Timing', value: 68, secondary: 'Needs earlier contact' },
+      { label: 'Power', value: 92, secondary: 'Strong' },
+      { label: 'Elbow Form', value: 58, secondary: '122 deg' },
+    ],
+  },
+  playerHistory: {
+    title: 'Player History Visualization',
+    description: 'Baseline progress for the selected player.',
+    fileName: 'player-history.csv',
+    rows: [
+      { label: 'Baseline', value: 68, secondary: 'First session' },
+      { label: 'Week 1', value: 74, secondary: 'Timing focus' },
+      { label: 'Week 2', value: 79, secondary: 'Power focus' },
+      { label: 'Current', value: 82, secondary: 'Balanced' },
+    ],
+  },
+}
+
 function Sidebar({ activePage, onPageChange }) {
   return (
     <aside className="sidebar">
@@ -570,7 +641,18 @@ function OverviewPage({ onCategoryClick }) {
   )
 }
 
-function MockupPage({ page }) {
+function getVisualizationId(sectionTitle, item) {
+  const text = `${sectionTitle} ${item}`.toLowerCase()
+  if (text.includes('shot list') || text.includes('#40') || text.includes('selected shot')) return 'shotList'
+  if (text.includes('session history') || text.includes('date and duration')) return 'sessionHistory'
+  if (text.includes('trend') || text.includes('power trend') || text.includes('timing trend')) return 'trendCharts'
+  if (text.includes('health') || text.includes('battery') || text.includes('signal') || text.includes('last seen')) return 'deviceHealth'
+  if (text.includes('live feedback') || text.includes('last shot') || text.includes('impact')) return 'liveFeedback'
+  if (text.includes('history') || text.includes('recent sessions') || text.includes('baseline')) return 'playerHistory'
+  return null
+}
+
+function MockupPage({ page, onVisualizationOpen }) {
   return (
     <section className="mockupPage">
       <div className="mockupHero">
@@ -594,12 +676,99 @@ function MockupPage({ page }) {
           <article key={section.title}>
             <h3>{section.title}</h3>
             <ul>
-              {section.items.map((item) => <li key={item}>{item}</li>)}
+              {section.items.map((item) => {
+                const visualizationId = getVisualizationId(section.title, item)
+
+                return (
+                  <li key={item}>
+                    {visualizationId ? (
+                      <button type="button" onClick={() => onVisualizationOpen(visualizationId)}>
+                        {item}
+                        <span>Open graph</span>
+                      </button>
+                    ) : (
+                      item
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           </article>
         ))}
       </div>
     </section>
+  )
+}
+
+function exportRowsAsCsv(dataset) {
+  const escapeCell = (value) => `"${String(value).replaceAll('"', '""')}"`
+  const csv = [
+    ['label', 'value', 'note'].map(escapeCell).join(','),
+    ...dataset.rows.map((row) => [row.label, row.value, row.secondary].map(escapeCell).join(',')),
+  ].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = dataset.fileName
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function VisualizationModal({ dataset, onClose }) {
+  if (!dataset) return null
+
+  const maxValue = Math.max(...dataset.rows.map((row) => row.value), 100)
+  const points = dataset.rows
+    .map((row, index) => {
+      const x = 20 + (index * 260) / Math.max(dataset.rows.length - 1, 1)
+      const y = 125 - (row.value / maxValue) * 100
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <div className="modalOverlay" onClick={onClose} role="presentation">
+      <section className="modalPanel graphPanel" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="graph-title">
+        <button className="closeButton" type="button" onClick={onClose} aria-label="Close visualization">
+          <X size={18} />
+        </button>
+        <div className="modalTitle graphTitle">
+          <span>Interactive Visualization</span>
+          <h2 id="graph-title">{dataset.title}</h2>
+          <p>{dataset.description}</p>
+        </div>
+        <div className="graphLayout">
+          <div className="lineChart" aria-label={`${dataset.title} line chart`}>
+            <svg viewBox="0 0 300 140" role="img">
+              <polyline points={points} />
+              {dataset.rows.map((row, index) => {
+                const x = 20 + (index * 260) / Math.max(dataset.rows.length - 1, 1)
+                const y = 125 - (row.value / maxValue) * 100
+                return <circle key={row.label} cx={x} cy={y} r="4" />
+              })}
+            </svg>
+          </div>
+          <div className="barList">
+            {dataset.rows.map((row) => (
+              <div className="barRow" key={row.label}>
+                <div>
+                  <b>{row.label}</b>
+                  <span>{row.secondary}</span>
+                </div>
+                <i><span style={{ width: `${Math.min(row.value, 100)}%` }} /></i>
+                <strong>{row.value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button className="exportButton" type="button" onClick={() => exportRowsAsCsv(dataset)}>
+          Export CSV
+        </button>
+      </section>
+    </div>
   )
 }
 
@@ -626,11 +795,14 @@ function DetailModal({ category, onClose }) {
 export default function App() {
   const [activePage, setActivePage] = useState('overview')
   const [selectedId, setSelectedId] = useState(null)
+  const [selectedVisualizationId, setSelectedVisualizationId] = useState(null)
   const selectedCategory = categories.find((item) => item.id === selectedId)
+  const selectedVisualization = visualizationSets[selectedVisualizationId]
   const currentMockup = pageMockups[activePage]
+  const hasOverlay = Boolean(selectedCategory || selectedVisualization)
 
   return (
-    <div className={`appShell ${selectedCategory ? 'isBlurred' : ''}`}>
+    <div className={`appShell ${hasOverlay ? 'isBlurred' : ''}`}>
       <div className="app">
         <Sidebar activePage={activePage} onPageChange={setActivePage} />
         <main className="main">
@@ -638,11 +810,12 @@ export default function App() {
           {activePage === 'overview' ? (
             <OverviewPage onCategoryClick={setSelectedId} />
           ) : (
-            <MockupPage page={currentMockup} />
+            <MockupPage page={currentMockup} onVisualizationOpen={setSelectedVisualizationId} />
           )}
         </main>
       </div>
       <DetailModal category={selectedCategory} onClose={() => setSelectedId(null)} />
+      <VisualizationModal dataset={selectedVisualization} onClose={() => setSelectedVisualizationId(null)} />
     </div>
   )
 }

@@ -427,12 +427,41 @@ button {
 }
 
 .mockupSections li {
-  padding: 9px 10px;
   color: #d7e5ec;
   font-size: 13px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: rgba(16, 34, 50, 0.44);
+}
+
+.mockupSections li:not(:has(button)) {
+  padding: 9px 10px;
+}
+
+.mockupSections li button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 38px;
+  padding: 9px 10px;
+  color: inherit;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mockupSections li button:hover {
+  color: #fff;
+}
+
+.mockupSections li button span {
+  flex: 0 0 auto;
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .modalOverlay {
@@ -505,6 +534,116 @@ button {
   margin-top: 7px;
   color: #b9cbd6;
   line-height: 1.5;
+}
+
+.graphPanel {
+  width: min(900px, 100%);
+}
+
+.graphTitle {
+  margin-bottom: 14px;
+}
+
+.graphLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1.1fr;
+  gap: 14px;
+}
+
+.lineChart,
+.barList {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(16, 34, 50, 0.42);
+}
+
+.lineChart {
+  display: grid;
+  min-height: 250px;
+  place-items: center;
+  padding: 14px;
+}
+
+.lineChart svg {
+  width: 100%;
+  max-width: 430px;
+  height: auto;
+  overflow: visible;
+}
+
+.lineChart polyline {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(40, 215, 245, 0.36));
+}
+
+.lineChart circle {
+  fill: var(--green);
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.barList {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.barRow {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.barRow b,
+.barRow span {
+  display: block;
+}
+
+.barRow b {
+  font-size: 13px;
+}
+
+.barRow span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.barRow i {
+  display: block;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.barRow i span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+}
+
+.barRow strong {
+  color: var(--green);
+  font-size: 15px;
+  text-align: right;
+}
+
+.exportButton {
+  min-height: 42px;
+  margin-top: 14px;
+  padding: 0 16px;
+  color: #061119;
+  font-weight: 900;
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  cursor: pointer;
 }
 
 .scoreGrid {
@@ -1059,6 +1198,7 @@ button {
   .mockupStats,
   .mockupSections,
   .scoreGrid,
+  .graphLayout,
   .deviceGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1086,6 +1226,7 @@ button {
   .detailGrid.twoCol,
   .formAnalysisDetail,
   .sessionSummaryDetail,
+  .graphLayout,
   .speedBody,
   .deviceGrid {
     grid-template-columns: 1fr;
