@@ -90,9 +90,6 @@ const gyroStats = [
 
 const sweetSpotHits = [
   { id: 1, x: 72, y: 22, score: 98, current: true },
-  { id: 2, x: 62, y: 25, score: 86 },
-  { id: 3, x: 74, y: 37, score: 82 },
-  { id: 4, x: 56, y: 43, score: 68 },
 ]
 
 function Sidebar() {
