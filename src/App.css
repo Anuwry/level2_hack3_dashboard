@@ -272,16 +272,16 @@ button {
 
 .categoryGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
 .categoryCard {
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 12px;
-  min-height: 138px;
-  padding: 15px;
+  grid-template-columns: 38px 1fr;
+  gap: 11px;
+  min-height: 126px;
+  padding: 13px;
   text-align: left;
   border: 1px solid var(--line);
   border-radius: 9px;
@@ -299,8 +299,8 @@ button {
 
 .categoryIcon {
   display: grid;
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   place-items: center;
   color: var(--cyan);
   border-radius: 8px;
@@ -322,14 +322,14 @@ button {
 .categoryCard b {
   display: block;
   margin-top: 3px;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .categoryCard p {
-  margin: 8px 0 0;
+  margin: 7px 0 0;
   color: #b9cbd6;
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.42;
 }
 
 .modalOverlay {
@@ -628,6 +628,98 @@ button {
   line-height: 1.45;
 }
 
+.formAnalysisDetail {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 22px;
+  align-items: center;
+}
+
+.donut {
+  position: relative;
+  display: grid;
+  width: 210px;
+  height: 210px;
+  place-items: center;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: conic-gradient(var(--red) 0 18%, var(--orange) 18% 30%, var(--green) 30% 78%, var(--cyan) 78% 100%);
+}
+
+.donut::before {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  content: "";
+  border-radius: 50%;
+  background: #0c1924;
+}
+
+.donut div {
+  position: relative;
+  text-align: center;
+}
+
+.donut b,
+.donut span {
+  display: block;
+}
+
+.donut b {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.donut span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.formStatList {
+  display: grid;
+  gap: 6px;
+}
+
+.formStat {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 54px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.formStat span,
+.formStat small {
+  display: block;
+}
+
+.formStat small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.formStat b {
+  font-size: 22px;
+}
+
+.formStat.red {
+  color: var(--red);
+}
+
+.formStat.orange {
+  color: var(--orange);
+}
+
+.formStat.green {
+  color: var(--green);
+}
+
+.formStat.cyan {
+  color: var(--cyan);
+}
+
 .adviceDetail {
   display: grid;
   gap: 12px;
@@ -687,30 +779,54 @@ button {
   background: rgba(40, 215, 245, 0.07);
 }
 
-.sessionDetail {
+.sessionSummaryDetail {
   display: grid;
-  grid-template-columns: 0.75fr 1fr;
   gap: 14px;
 }
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
 }
 
 .summaryGrid div {
-  min-height: 64px;
-  padding: 11px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(16, 34, 50, 0.52);
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 4px 10px;
+  align-items: center;
+  min-height: 86px;
+  padding: 14px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(16, 34, 50, 0.36);
+}
+
+.summaryGrid svg {
+  grid-row: span 3;
+  color: var(--cyan);
 }
 
 .summaryGrid b {
   display: block;
-  margin-top: 7px;
-  font-size: 22px;
+  font-size: 24px;
+  line-height: 1.05;
+}
+
+.summaryGrid small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.reportButton {
+  min-height: 42px;
+  color: #eaf7fb;
+  font-weight: 700;
+  border: 1px solid rgba(40, 215, 245, 0.26);
+  border-radius: 8px;
+  background: rgba(43, 140, 255, 0.26);
+  cursor: pointer;
 }
 
 .shotList {
@@ -861,9 +977,14 @@ button {
   .categoryGrid,
   .scoreGrid,
   .detailGrid.twoCol,
-  .sessionDetail,
+  .formAnalysisDetail,
+  .sessionSummaryDetail,
   .speedBody,
   .deviceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryGrid {
     grid-template-columns: 1fr;
   }
 

@@ -6,6 +6,7 @@ import {
   ChartNoAxesCombined,
   Clock3,
   Dumbbell,
+  Flame,
   Gauge,
   Home,
   Medal,
@@ -48,11 +49,20 @@ const scores = [
   { label: 'Injury Risk', value: 'Medium', icon: ShieldAlert, tone: 'orange', note: 'Elbow angle too open' },
 ]
 
+const formStats = [
+  ['Elbow Incorrect', 'Used for Injury Risk', '12', 'red'],
+  ['Incorrect Shots', '', '12', 'orange'],
+  ['Correct Shots', '', '28', 'green'],
+  ['Total Shots', '', '40', 'cyan'],
+]
+
 const summaryItems = [
-  ['Total Shots', '40'],
-  ['Best Shot', 'Smash #24'],
-  ['Max Power', '98'],
-  ['Consistency', '72%'],
+  ['Total Shots', '40', '', Target],
+  ['Best Shot', 'Smash #24', 'Power 98', Medal],
+  ['Calories', '210 kcal', '', Flame],
+  ['Avg Power', '76.5', '', Zap],
+  ['Max Power', '98', '', Activity],
+  ['Consistency', '72%', '', Gauge],
 ]
 
 const recentShots = [
@@ -202,6 +212,30 @@ function SweetSpotDetail() {
   )
 }
 
+function FormAnalysisDetail() {
+  return (
+    <div className="formAnalysisDetail">
+      <div className="donut">
+        <div>
+          <b>40</b>
+          <span>Total Shots</span>
+        </div>
+      </div>
+      <div className="formStatList">
+        {formStats.map(([label, note, value, tone]) => (
+          <div className={`formStat ${tone}`} key={label}>
+            <span>
+              {label}
+              {note && <small>{note}</small>}
+            </span>
+            <b>{value}</b>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function CoachAdvice() {
   return (
     <div className="adviceDetail">
@@ -223,26 +257,34 @@ function CoachAdvice() {
 
 function SessionDetail() {
   return (
-    <div className="sessionDetail">
+    <div className="sessionSummaryDetail">
       <div className="summaryGrid">
-        {summaryItems.map(([label, value]) => (
+        {summaryItems.map(([label, value, note, Icon]) => (
           <div key={label}>
+            <Icon size={22} />
             <span>{label}</span>
             <b>{value}</b>
+            {note && <small>{note}</small>}
           </div>
         ))}
       </div>
-      <div className="shotList">
-        {recentShots.map(([id, shot, result, power, time, tone]) => (
-          <div className="shotRow" key={id}>
-            <span>{id}</span>
-            <b>{shot}</b>
-            <em className={tone}>{result}</em>
-            <small>Power {power}</small>
-            <time>{time}</time>
-          </div>
-        ))}
-      </div>
+      <button className="reportButton" type="button">ดูรายงานฉบับเต็ม</button>
+    </div>
+  )
+}
+
+function RecentShotsDetail() {
+  return (
+    <div className="shotList">
+      {recentShots.map(([id, shot, result, power, time, tone]) => (
+        <div className="shotRow" key={id}>
+          <span>{id}</span>
+          <b>{shot}</b>
+          <em className={tone}>{result}</em>
+          <small>Power {power}</small>
+          <time>{time}</time>
+        </div>
+      ))}
     </div>
   )
 }
@@ -312,6 +354,14 @@ const categories = [
     content: <SweetSpotDetail />,
   },
   {
+    id: 'form-analysis',
+    kicker: 'Shots',
+    title: 'Form Analysis',
+    description: 'Elbow errors, correct shots, and total shot count.',
+    icon: Radar,
+    content: <FormAnalysisDetail />,
+  },
+  {
     id: 'coach',
     kicker: 'Coach',
     title: 'Next Action',
@@ -322,10 +372,18 @@ const categories = [
   {
     id: 'session',
     kicker: 'Session',
-    title: 'Summary & Shots',
-    description: 'Shot count, best shot, and recent attempts.',
+    title: 'Session Summary',
+    description: 'Total shots, best shot, calories, power, and consistency.',
     icon: ChartNoAxesCombined,
     content: <SessionDetail />,
+  },
+  {
+    id: 'recent-shots',
+    kicker: 'Latest',
+    title: 'Recent Shots',
+    description: 'Latest attempts with power, timing, and impact result.',
+    icon: Clock3,
+    content: <RecentShotsDetail />,
   },
   {
     id: 'speed',
