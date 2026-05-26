@@ -89,10 +89,10 @@ const gyroStats = [
 ]
 
 const sweetSpotHits = [
-  { id: 1, x: 50, y: 46, score: 98, current: true },
-  { id: 2, x: 43, y: 38, score: 84 },
-  { id: 3, x: 57, y: 55, score: 81 },
-  { id: 4, x: 35, y: 64, score: 62 },
+  { id: 1, x: 69, y: 30, score: 98, current: true },
+  { id: 2, x: 62, y: 25, score: 86 },
+  { id: 3, x: 75, y: 36, score: 82 },
+  { id: 4, x: 55, y: 42, score: 68 },
 ]
 
 function Sidebar() {
@@ -256,18 +256,20 @@ function SweetSpotImpact() {
   return (
     <>
       <div className="sweetSpotStage">
-        <img className="panelImage compact" src={asset('racket.png')} alt="Racket sweet spot" />
-        <div className="sweetZone" aria-hidden="true" />
-        {sweetSpotHits.map((hit) => (
-          <span
-            className={`hitDot ${hit.current ? 'current' : ''}`}
-            key={hit.id}
-            style={{ left: `${hit.x}%`, top: `${hit.y}%` }}
-            title={`Impact score ${hit.score}`}
-          >
-            {hit.current ? hit.score : ''}
-          </span>
-        ))}
+        <div className="sweetRacket">
+          <img src={asset('racket.png')} alt="Racket sweet spot" />
+          <div className="sweetZone" aria-hidden="true" />
+          {sweetSpotHits.map((hit) => (
+            <span
+              className={`hitDot ${hit.current ? 'current' : ''}`}
+              key={hit.id}
+              style={{ left: `${hit.x}%`, top: `${hit.y}%` }}
+              title={`Impact score ${hit.score}`}
+            >
+              {hit.current ? hit.score : ''}
+            </span>
+          ))}
+        </div>
       </div>
       <div className="sweetScore">
         <div>
