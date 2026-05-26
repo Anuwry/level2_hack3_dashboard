@@ -30,6 +30,7 @@ const navItems = [
   { id: 'training', label: 'Training', icon: Dumbbell },
   { id: 'shot-analysis', label: 'Shot Analysis', icon: Radar },
   { id: 'reports', label: 'Reports', icon: ChartNoAxesCombined },
+  { id: 'data-explorer', label: 'Data Explorer', icon: Gauge },
   { id: 'sensors', label: 'Sensors', icon: Activity },
   { id: 'players', label: 'Players', icon: Users },
   { id: 'settings', label: 'Settings', icon: Settings },
@@ -139,6 +140,67 @@ const visualizationSets = {
       { label: 'Week 1', value: 74, secondary: 'Timing focus' },
       { label: 'Week 2', value: 79, secondary: 'Power focus' },
       { label: 'Current', value: 82, secondary: 'Balanced' },
+    ],
+  },
+}
+
+const recordLists = {
+  shots: {
+    title: 'All Shots in Current Session',
+    actionLabel: 'Open Shot Graph',
+    visualizationId: 'shotList',
+    rows: [
+      ['#40', 'Smash', 'Sweet Spot', 'Power 92', '01:18'],
+      ['#39', 'Clear', 'Timing', 'Power 78', '01:16'],
+      ['#38', 'Drop', 'Timing', 'Power 65', '01:14'],
+      ['#37', 'Smash', 'Sweet Spot', 'Power 95', '01:12'],
+      ['#36', 'Drive', 'Good', 'Power 70', '01:10'],
+    ],
+  },
+  sessions: {
+    title: 'Session History',
+    actionLabel: 'Open Session Graph',
+    visualizationId: 'sessionHistory',
+    rows: [
+      ['May 26', '40 shots', 'Overall 88', 'Best Smash #24', '18m 36s'],
+      ['May 22', '40 shots', 'Overall 83', 'Timing focus', '17m 12s'],
+      ['May 15', '42 shots', 'Overall 80', 'Power focus', '20m 02s'],
+      ['May 08', '38 shots', 'Overall 78', 'Form focus', '16m 44s'],
+      ['May 01', '34 shots', 'Overall 74', 'Baseline', '15m 28s'],
+    ],
+  },
+  devices: {
+    title: 'Device List',
+    actionLabel: 'Open Sensor Graph',
+    visualizationId: 'deviceHealth',
+    rows: [
+      ['Core Sensor', 'Connected', 'Battery 100%', 'Signal good', 'Seen now'],
+      ['Wrist Band', 'Connected', 'Battery 96%', 'Signal good', 'Seen now'],
+      ['AI Coach Hub', 'Connected', 'Battery 100%', 'Signal good', 'Seen now'],
+      ['Sensor Pod', 'Connected', 'Battery 94%', 'Signal good', 'Seen now'],
+    ],
+  },
+  players: {
+    title: 'Player List',
+    actionLabel: 'Open Player Graph',
+    visualizationId: 'playerHistory',
+    rows: [
+      ['Player 01', 'Intermediate', 'Right hand', 'Overall 82', 'Active'],
+      ['Player 02', 'Beginner', 'Right hand', 'Overall 64', 'Inactive'],
+      ['Player 03', 'Advanced', 'Left hand', 'Overall 91', 'Inactive'],
+    ],
+  },
+  allData: {
+    title: 'All Data Explorer',
+    actionLabel: 'Open Combined Graph',
+    visualizationId: 'trendCharts',
+    rows: [
+      ['Shot', '#40 Smash', 'Sweet Spot', 'Power 92', '01:18'],
+      ['Shot', '#39 Clear', 'Timing', 'Power 78', '01:16'],
+      ['Session', 'May 26', '40 shots', 'Overall 88', '18m 36s'],
+      ['Device', 'Core Sensor', 'Connected', 'Battery 100%', 'Seen now'],
+      ['Player', 'Player 01', 'Intermediate', 'Overall 82', 'Active'],
+      ['Report', 'May Summary', 'Ready', 'CSV/PDF', 'Updated today'],
     ],
   },
 }
@@ -532,6 +594,7 @@ const pageMockups = {
         items: ['Video frame preview', 'Pose confidence', 'Racket face confidence', 'Raw sensor link'],
       },
     ],
+    records: recordLists.shots,
   },
   reports: {
     kicker: 'Reports',
@@ -556,6 +619,32 @@ const pageMockups = {
         items: ['PDF report', 'CSV shot data', 'Coach summary', 'Share link'],
       },
     ],
+    records: recordLists.sessions,
+  },
+  'data-explorer': {
+    kicker: 'All Data',
+    title: 'Global Data Explorer',
+    description: 'A combined list for shots, sessions, devices, players, and reports. Use this when you need one exportable data view.',
+    primary: [
+      ['Records', '24', 'Across all data types'],
+      ['Filters', '5', 'Type, date, player, status, score'],
+      ['Export', 'CSV', 'Current filtered view'],
+    ],
+    sections: [
+      {
+        title: 'Filters',
+        items: ['Type: All', 'Date range: This month', 'Player: Player 01', 'Status: Any'],
+      },
+      {
+        title: 'Interactive Views',
+        items: ['Shot List', 'Session History', 'Trend Charts', 'Health Checks'],
+      },
+      {
+        title: 'Exports',
+        items: ['Export visible rows', 'Export shot data', 'Export session report', 'Export sensor status'],
+      },
+    ],
+    records: recordLists.allData,
   },
   sensors: {
     kicker: 'Sensors',
@@ -580,6 +669,7 @@ const pageMockups = {
         items: ['Start calibration', 'Reset device', 'Test vibration', 'Reconnect device'],
       },
     ],
+    records: recordLists.devices,
   },
   players: {
     kicker: 'Players',
@@ -604,6 +694,7 @@ const pageMockups = {
         items: ['Add player', 'Switch player', 'Edit profile', 'Archive player'],
       },
     ],
+    records: recordLists.players,
   },
   settings: {
     kicker: 'Settings',
@@ -694,6 +785,53 @@ function MockupPage({ page, onVisualizationOpen }) {
               })}
             </ul>
           </article>
+        ))}
+      </div>
+
+      {page.records && (
+        <RecordList data={page.records} onVisualizationOpen={onVisualizationOpen} />
+      )}
+    </section>
+  )
+}
+
+function exportRecordListAsCsv(data) {
+  const escapeCell = (value) => `"${String(value).replaceAll('"', '""')}"`
+  const maxColumns = Math.max(...data.rows.map((row) => row.length))
+  const headers = Array.from({ length: maxColumns }, (_, index) => `column_${index + 1}`)
+  const csv = [
+    headers.map(escapeCell).join(','),
+    ...data.rows.map((row) => headers.map((_, index) => escapeCell(row[index] || '')).join(',')),
+  ].join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${data.title.toLowerCase().replaceAll(' ', '-')}.csv`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function RecordList({ data, onVisualizationOpen }) {
+  return (
+    <section className="recordList">
+      <div className="recordListHeader">
+        <div>
+          <span>Show List</span>
+          <h3>{data.title}</h3>
+        </div>
+        <div className="recordActions">
+          <button type="button" onClick={() => onVisualizationOpen(data.visualizationId)}>{data.actionLabel}</button>
+          <button type="button" onClick={() => exportRecordListAsCsv(data)}>Export CSV</button>
+        </div>
+      </div>
+      <div className="recordRows">
+        {data.rows.map((row) => (
+          <button type="button" className="recordRow" onClick={() => onVisualizationOpen(data.visualizationId)} key={row.join('-')}>
+            {row.map((cell) => <span key={cell}>{cell}</span>)}
+          </button>
         ))}
       </div>
     </section>

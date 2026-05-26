@@ -464,6 +464,94 @@ button {
   font-weight: 800;
 }
 
+.recordList {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(13, 26, 38, 0.72);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.recordListHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.recordListHeader span {
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.recordListHeader h3 {
+  margin: 4px 0 0;
+  font-size: 17px;
+}
+
+.recordActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.recordActions button {
+  min-height: 34px;
+  padding: 0 12px;
+  color: #eaf7fb;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid rgba(40, 215, 245, 0.28);
+  border-radius: 7px;
+  background: rgba(40, 215, 245, 0.08);
+  cursor: pointer;
+}
+
+.recordActions button:last-child {
+  color: #061119;
+  border-color: transparent;
+  background: var(--green);
+}
+
+.recordRows {
+  display: grid;
+}
+
+.recordRow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 14px;
+  color: #d7e5ec;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+}
+
+.recordRow:hover {
+  background: rgba(40, 215, 245, 0.06);
+}
+
+.recordRow:last-child {
+  border-bottom: 0;
+}
+
+.recordRow span {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -1197,6 +1285,7 @@ button {
   .categoryGrid,
   .mockupStats,
   .mockupSections,
+  .recordRow,
   .scoreGrid,
   .graphLayout,
   .deviceGrid {
@@ -1222,6 +1311,7 @@ button {
   .categoryGrid,
   .mockupStats,
   .mockupSections,
+  .recordRow,
   .scoreGrid,
   .detailGrid.twoCol,
   .formAnalysisDetail,
