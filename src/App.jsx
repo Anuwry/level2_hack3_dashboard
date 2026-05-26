@@ -204,7 +204,6 @@ function SweetSpotCard() {
         <div className="racketWrap">
           <img src={asset('racket.png')} alt="Racket sweet spot" />
           <div className="sweetZone" aria-hidden="true" />
-          <span className="hitDot">98</span>
         </div>
       </div>
       <div className="impactSummary">

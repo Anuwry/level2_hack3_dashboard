@@ -568,24 +568,6 @@ a {
   transform: translate(-50%, -50%) rotate(28deg);
 }
 
-.hitDot {
-  position: absolute;
-  left: 72%;
-  top: 22%;
-  display: grid;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  color: #03130b;
-  font-size: 11px;
-  font-weight: 900;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 14px rgba(41, 227, 140, 0.7);
-  transform: translate(-50%, -50%);
-}
-
 .impactSummary {
   display: grid;
   grid-template-columns: 1fr auto;
