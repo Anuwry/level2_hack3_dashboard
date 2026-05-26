@@ -9,7 +9,6 @@ import {
   Gauge,
   Home,
   Medal,
-  Menu,
   Play,
   Radar,
   Settings,
@@ -26,103 +25,70 @@ const asset = (name) => `/assets/${name}`
 
 const navItems = [
   { label: 'Overview', icon: Home, active: true },
-  { label: 'การฝึกซ้อม', icon: Dumbbell },
-  { label: 'วิเคราะห์ช็อต', icon: Radar },
-  { label: 'รายงานการเล่น', icon: ChartNoAxesCombined },
-  { label: 'เซ็นเซอร์', icon: Activity },
-  { label: 'ผู้เล่น', icon: Users },
-  { label: 'การตั้งค่า', icon: Settings },
+  { label: 'Training', icon: Dumbbell },
+  { label: 'Shot Analysis', icon: Radar },
+  { label: 'Reports', icon: ChartNoAxesCombined },
+  { label: 'Sensors', icon: Activity },
+  { label: 'Players', icon: Users },
+  { label: 'Settings', icon: Settings },
 ]
 
-const connectedDevices = [
-  ['Sensor Core', 'core-sensor.png'],
+const devices = [
+  ['Core Sensor', 'core-sensor.png'],
   ['Wrist Band', 'wrist-band.png'],
   ['AI Coach Hub', 'ai-coach-hub.png'],
-  ['Pro Motion Coach', 'pro-motion-coach.png'],
-  ['Wrist Sensor', 'wrist-sensor.png'],
   ['Sensor Pod', 'sensor-pod.png'],
 ]
 
-const metrics = [
-  { label: 'Power Score', value: '84', unit: '/100', icon: Zap, progress: 84, change: '+12% จากครั้งก่อน', tone: 'blue' },
-  { label: 'Timing Score', value: '68', unit: '/100', icon: Clock3, progress: 68, change: '+8% จากครั้งก่อน', tone: 'blue' },
-  { label: 'Sweet Spot Score', value: '88', unit: '/100', icon: Target, progress: 88, change: '+15% จากครั้งก่อน', tone: 'green' },
-  { label: 'Injury Risk', value: 'Medium', icon: ShieldAlert, note: 'เสี่ยงปานกลาง', tone: 'orange' },
-  { label: 'Session Time', value: '00:18:36', icon: Gauge, note: 'เวลาในการฝึกซ้อมวันนี้', tone: 'blue' },
+const scores = [
+  { label: 'Power', value: 84, icon: Zap, tone: 'blue', note: '+12% from last session' },
+  { label: 'Timing', value: 68, icon: Clock3, tone: 'cyan', note: 'Needs earlier contact' },
+  { label: 'Sweet Spot', value: 88, icon: Target, tone: 'green', note: 'Strong impact quality' },
+  { label: 'Injury Risk', value: 'Medium', icon: ShieldAlert, tone: 'orange', note: 'Elbow angle too open' },
 ]
 
-const formStats = [
-  ['Elbow Incorrect', 'Used for Injury Risk', '12', 'red'],
-  ['Incorrect Shots', '', '12', 'orange'],
-  ['Correct Shots', '', '28', 'green'],
-  ['Total Shots', '', '40', 'blue'],
-]
-
-const speedHistory = ['205', '214', '198', '221', '209']
-
-const summary = [
+const summaryItems = [
   ['Total Shots', '40'],
-  ['Best Shot', 'Smash #24', 'Power 98'],
-  ['Calories', '210 kcal'],
-  ['Avg Power', '76.5'],
+  ['Best Shot', 'Smash #24'],
   ['Max Power', '98'],
   ['Consistency', '72%'],
 ]
 
-const suggestions = [
-  ['เพิ่มความแม่นยำในการ Smash', 'โฟกัสตำแหน่ง sweet spot มากขึ้น', 'ฝึกทันที', 'blue'],
-  ['ปรับจังหวะ Timing', 'พยายามให้เริ่มตีเร็วขึ้นเล็กน้อย', 'ฝึกทันที', 'orange'],
-  ['เพิ่มความหลากหลาย', 'สลับใช้ Drop และ Drive ให้มากขึ้น', 'แนะนำ', 'green'],
-]
-
 const recentShots = [
-  ['40', 'Smash', 'Power: 92', 'Sweet Spot', '01:18', 'green'],
-  ['39', 'Clear', 'Power: 78', 'Timing', '01:16', 'blue'],
-  ['38', 'Drop', 'Power: 65', 'Timing', '01:14', 'blue'],
-  ['37', 'Smash', 'Power: 95', 'Sweet Spot', '01:12', 'green'],
-  ['36', 'Drive', 'Power: 70', 'Good', '01:10', 'green'],
+  ['40', 'Smash', 'Sweet Spot', '92', '01:18', 'green'],
+  ['39', 'Clear', 'Timing', '78', '01:16', 'cyan'],
+  ['38', 'Drop', 'Timing', '65', '01:14', 'cyan'],
+  ['37', 'Smash', 'Sweet Spot', '95', '01:12', 'green'],
 ]
 
-const sensorCards = [
-  ['CORE SENSOR', 'core-sensor.png'],
-  ['WRIST BAND', 'wrist-band.png'],
-  ['AI COACH HUB', 'ai-coach-hub.png'],
+const kitDevices = [
+  ['Core Sensor', 'core-sensor.png'],
+  ['Wrist Band', 'wrist-band.png'],
+  ['AI Coach Hub', 'ai-coach-hub.png'],
+  ['Sensor Pod', 'sensor-pod.png'],
 ]
-
-const kitCards = [
-  ['PRO MOTION COACH', 'pro-motion-coach.png'],
-  ['WRIST SENSOR', 'wrist-sensor.png'],
-  ['SENSOR POD', 'sensor-pod.png'],
-  ['CHARGING CASE', 'charging-case.png'],
-]
-
-const sweetSpotHit = { x: 72, y: 22, score: 98 }
 
 function Sidebar() {
   return (
     <aside className="sidebar">
-      <div className="logoRow">
-        <img src={asset('ai-coach-logo.png')} alt="AI Coach logo" />
-        <Menu size={18} />
-      </div>
+      <img className="logo" src={asset('ai-coach-logo.png')} alt="AI Coach logo" />
 
       <nav className="nav" aria-label="Dashboard navigation">
         {navItems.map(({ label, icon: Icon, active }) => (
           <a className={active ? 'active' : ''} href="#" key={label}>
-            <Icon size={20} />
+            <Icon size={19} />
             <span>{label}</span>
           </a>
         ))}
       </nav>
 
-      <section className="miniStatus" aria-label="Connected devices">
-        <div className="miniTitle">
-          <h2>อุปกรณ์เชื่อมต่อ</h2>
-          <span><BatteryFull size={15} />100%</span>
+      <section className="deviceRail" aria-label="Connected devices">
+        <div className="railHeader">
+          <h2>Connected Kit</h2>
+          <span><BatteryFull size={14} />100%</span>
         </div>
-
-        {connectedDevices.map(([name, image]) => (
-          <div className="miniRow" key={name}>
+        {devices.map(([name, image]) => (
+          <div className="railDevice" key={name}>
             <img src={asset(image)} alt={name} />
             <div>
               <b>{name}</b>
@@ -131,9 +97,6 @@ function Sidebar() {
             <i />
           </div>
         ))}
-
-        <button className="syncButton" type="button">ซิงค์ข้อมูลล่าสุด</button>
-        <p className="syncText">อัปเดต 1 นาทีที่แล้ว</p>
       </section>
     </aside>
   )
@@ -141,157 +104,230 @@ function Sidebar() {
 
 function Header() {
   return (
-    <header className="topbar">
-      <div className="title">
-        <h1>Badminton AI Coach Dashboard</h1>
-        <span>วิเคราะห์ทุกช็อต พัฒนาทุกเกม</span>
+    <header className="header">
+      <div>
+        <p>Live Training Session</p>
+        <h1>Badminton AI Coach</h1>
+        <span>อ่านผลได้ทันทีว่าอะไรดี อะไรควรแก้ และควรฝึกอะไรต่อ</span>
       </div>
-      <div className="connection">
-        <div className="pill">
-          <BluetoothConnected size={34} />
-          <div>
-            <b>เชื่อมต่อแล้ว</b>
-            <span>Bluetooth 5.2</span>
-          </div>
+      <div className="headerStatus">
+        <div className="connectPill">
+          <BluetoothConnected size={26} />
+          <span>Bluetooth 5.2</span>
+          <b>Connected</b>
         </div>
-        <div className="pill player">
-          <div className="avatar">01</div>
-          <div>
-            <b>Player 01</b>
-            <span>Level Intermediate</span>
-          </div>
+        <div className="playerPill">
+          <div>01</div>
+          <span>Player 01</span>
+          <b>Intermediate</b>
         </div>
       </div>
     </header>
   )
 }
 
-function MetricCard({ metric }) {
-  const Icon = metric.icon
+function FocusBanner() {
   return (
-    <article className={`card metric ${metric.tone || ''}`}>
-      <div className="metricHeader">
-        <Icon size={32} />
-        <h2>{metric.label}</h2>
+    <section className="focusBanner">
+      <div>
+        <p>Today's Focus</p>
+        <h2>ลดมุมศอกให้เหลือ 85°-105° แล้วรักษาจุดปะทะให้อยู่กลางหน้าไม้</h2>
+        <span>จุดเด่นตอนนี้คือพลังและ sweet spot ดีแล้ว แต่ timing กับมุมข้อศอกยังเป็นจุดที่ควรแก้ก่อน</span>
       </div>
-      <div className="metricValue">
-        {metric.value}
-        {metric.unit && <small>{metric.unit}</small>}
+      <div className="focusScore">
+        <span>Overall</span>
+        <b>82</b>
+        <small>/100</small>
       </div>
-      {metric.progress ? (
-        <>
-          <div className="bar"><i style={{ width: `${metric.progress}%` }} /></div>
-          <p className="delta">▲ {metric.change}</p>
-        </>
-      ) : (
-        <p className="note">{metric.note}</p>
-      )}
-    </article>
-  )
-}
-
-function Panel({ title, children, className = '' }) {
-  return (
-    <section className={`card panel ${className}`}>
-      <h2>{title}</h2>
-      {children}
     </section>
   )
 }
 
-function ElbowAnalysis() {
+function ScoreCard({ item }) {
+  const Icon = item.icon
+  const isNumber = typeof item.value === 'number'
   return (
-    <div className="elbowPanelLayout">
-      <div className="elbowVisual">
-        <img className="elbowImage" src={asset('elbows.png')} alt="Elbow form analysis" />
-        <svg className="elbowArmArc" viewBox="0 0 100 86" aria-hidden="true">
-          <path className="armArcOuter" d="M 18 36 C 34 22 61 24 75 46" />
-          <path className="armArcInner" d="M 42 37 C 51 43 57 53 59 66" />
-          <circle cx="75" cy="46" r="4" />
-          <text x="68" y="31">122°</text>
-        </svg>
+    <article className={`scoreCard ${item.tone}`}>
+      <div className="scoreIcon"><Icon size={22} /></div>
+      <div>
+        <span>{item.label}</span>
+        <b>{item.value}{isNumber && <small>/100</small>}</b>
+        <p>{item.note}</p>
+        {isNumber && <i style={{ width: `${item.value}%` }} />}
       </div>
-
-      <div className="elbowInfo">
-        <p>Recommended Range</p>
-        <strong className="range">85°-105°</strong>
-        <p>Current Angle</p>
-        <strong className="angle">122°</strong>
-        <div className="statusBadge">Incorrect Form</div>
-        <span>อยู่ในช่วงที่เพิ่มความเสี่ยง บาดเจ็บได้ง่าย</span>
-      </div>
-    </div>
+    </article>
   )
 }
 
-function FormAnalysis() {
+function ElbowCard() {
   return (
-    <div className="formGrid">
-      <div className="donut">
-        <div><b>40</b><span>Total Shots</span></div>
+    <section className="card visualCard elbowCard">
+      <div className="sectionTitle">
+        <span>Form Alert</span>
+        <h2>Elbow Form Analysis</h2>
       </div>
-      <div className="statList">
-        {formStats.map(([label, note, value, tone]) => (
-          <div className={`stat ${tone}`} key={label}>
-            <span>{label}{note && <small>{note}</small>}</span>
-            <strong>{value}</strong>
+      <div className="elbowContent">
+        <div className="elbowStage">
+          <img src={asset('elbows.png')} alt="Elbow form analysis" />
+          <svg className="elbowArc" viewBox="0 0 100 86" aria-hidden="true">
+            <path d="M 18 36 C 34 22 61 24 75 46" />
+            <path className="inner" d="M 42 37 C 51 43 57 53 59 66" />
+            <circle cx="75" cy="46" r="4" />
+            <text x="68" y="31">122°</text>
+          </svg>
+        </div>
+        <div className="calloutList">
+          <div className="callout danger">
+            <span>Current Angle</span>
+            <b>122°</b>
+            <p>กว้างเกินช่วงที่แนะนำ</p>
+          </div>
+          <div className="callout good">
+            <span>Target Range</span>
+            <b>85°-105°</b>
+            <p>ลดความเสี่ยงและควบคุมทิศทางดีขึ้น</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function SweetSpotCard() {
+  return (
+    <section className="card visualCard">
+      <div className="sectionTitle">
+        <span>Impact Quality</span>
+        <h2>Sweet Spot Impact</h2>
+      </div>
+      <div className="sweetStage">
+        <div className="racketWrap">
+          <img src={asset('racket.png')} alt="Racket sweet spot" />
+          <div className="sweetZone" aria-hidden="true" />
+          <span className="hitDot">98</span>
+        </div>
+      </div>
+      <div className="impactSummary">
+        <span>Impact Score</span>
+        <b>98<small>/100</small></b>
+        <p>โดนใกล้กลางหน้าไม้มาก ทำให้ส่งแรงได้ดี</p>
+      </div>
+    </section>
+  )
+}
+
+function CoachAdvice() {
+  return (
+    <section className="card adviceCard">
+      <div className="sectionTitle">
+        <span>Next Best Action</span>
+        <h2>AI Coach Suggestion</h2>
+      </div>
+      <div className="advicePrimary">
+        <Sparkles size={26} />
+        <div>
+          <b>ฝึกจังหวะตีให้เร็วขึ้นเล็กน้อย</b>
+          <p>Timing อยู่ที่ 68/100 ให้เริ่มสวิงเร็วขึ้นก่อนลูกถึงจุดปะทะ</p>
+        </div>
+      </div>
+      <ul className="cleanList">
+        <li><span>1</span> ลดมุมศอกจาก 122° ไปใกล้ 100°</li>
+        <li><span>2</span> รักษาจุดปะทะให้อยู่กลางหน้าไม้</li>
+        <li><span>3</span> เพิ่ม Drop และ Drive เพื่อความหลากหลาย</li>
+      </ul>
+    </section>
+  )
+}
+
+function SessionSummary() {
+  return (
+    <section className="card">
+      <div className="sectionTitle">
+        <span>Session</span>
+        <h2>Quick Summary</h2>
+      </div>
+      <div className="summaryGrid">
+        {summaryItems.map(([label, value]) => (
+          <div key={label}>
+            <span>{label}</span>
+            <b>{value}</b>
           </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 
-function SpeedGyroPanel() {
+function SpeedCard() {
   return (
-    <div className="speedPanel">
-      <div className="speedVisual">
-        <img className="speed" src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
+    <section className="card speedCard">
+      <div className="sectionTitle">
+        <span>Gyro</span>
+        <h2>Swing Speed</h2>
       </div>
-      <div className="speedNumbers">
-        <div><span>Max Speed</span><b>276<small>km/h</small></b></div>
-        <div><span>Average Speed</span><b>198<small>km/h</small></b></div>
-        <div><span>Swing Acceleration</span><b>32.6<small>m/s²</small></b></div>
-      </div>
-      <div className="speedHistory" aria-label="Recent swing speeds">
-        {speedHistory.map((speed) => <span key={speed}>{speed}</span>)}
-      </div>
-    </div>
-  )
-}
-
-function SweetSpotImpact() {
-  return (
-    <div className="sweetPanel">
-      <div className="sweetSpotStage">
-        <div className="sweetRacket">
-          <img src={asset('racket.png')} alt="Racket sweet spot" />
-          <div className="sweetZone" aria-hidden="true" />
-          <span
-            className="hitDot current"
-            style={{ left: `${sweetSpotHit.x}%`, top: `${sweetSpotHit.y}%` }}
-            title={`Impact score ${sweetSpotHit.score}`}
-          >
-            {sweetSpotHit.score}
-          </span>
+      <div className="speedBody">
+        <img src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
+        <div>
+          <span>Max Speed</span>
+          <b>276<small>km/h</small></b>
+          <span>Acceleration</span>
+          <b className="greenText">32.6<small>m/s²</small></b>
         </div>
       </div>
-      <div className="impactScale">
-        <span>Low Impact</span>
-        <i />
-        <span>High Impact</span>
-      </div>
-    </div>
+    </section>
   )
 }
 
-function DeviceCard({ name, image }) {
+function RecentShots() {
   return (
-    <div className="deviceCard">
-      <img src={asset(image)} alt={name} />
-      <b>{name}</b>
-      <span><BatteryFull size={14} />100% <i /> Connected</span>
-    </div>
+    <section className="card">
+      <div className="sectionTitle">
+        <span>Latest</span>
+        <h2>Recent Shots</h2>
+      </div>
+      <div className="shotList">
+        {recentShots.map(([id, shot, result, power, time, tone]) => (
+          <div className="shotRow" key={id}>
+            <span>{id}</span>
+            <b>{shot}</b>
+            <em className={tone}>{result}</em>
+            <small>Power {power}</small>
+            <time>{time}</time>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function DevicesCard() {
+  return (
+    <section className="card devicesCard">
+      <div className="sectionTitle">
+        <span>Hardware</span>
+        <h2>Sensor Status</h2>
+      </div>
+      <div className="deviceGrid">
+        {kitDevices.map(([name, image]) => (
+          <div className="deviceTile" key={name}>
+            <img src={asset(image)} alt={name} />
+            <b>{name}</b>
+            <span><BatteryFull size={13} />100% Connected</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function QuickActions() {
+  return (
+    <section className="card actionCard">
+      <button type="button"><Play size={18} />Start Training</button>
+      <button type="button"><Video size={18} />Analyze Video</button>
+      <button type="button"><Upload size={18} />Upload Session</button>
+      <button type="button"><Medal size={18} />View Goals</button>
+    </section>
   )
 }
 
@@ -301,93 +337,27 @@ export default function App() {
       <Sidebar />
       <main className="main">
         <Header />
+        <FocusBanner />
 
-        <section className="metricsGrid" aria-label="Training metrics">
-          {metrics.map((metric) => <MetricCard metric={metric} key={metric.label} />)}
+        <section className="scoreGrid" aria-label="Training scores">
+          {scores.map((item) => <ScoreCard item={item} key={item.label} />)}
         </section>
 
-        <section className="analysisGrid">
-          <Panel title="Elbow Form Analysis" className="elbowPanel">
-            <ElbowAnalysis />
-          </Panel>
-          <Panel title="Form Analysis (Elbow & Shots)">
-            <FormAnalysis />
-          </Panel>
-          <Panel title="Speed (Gyro)">
-            <SpeedGyroPanel />
-          </Panel>
-          <Panel title="Sweet Spot Impact">
-            <SweetSpotImpact />
-          </Panel>
+        <section className="primaryGrid">
+          <ElbowCard />
+          <SweetSpotCard />
+          <CoachAdvice />
         </section>
 
-        <section className="insightGrid">
-          <Panel title="Session Summary">
-            <div className="summaryGrid">
-              {summary.map(([label, value, note]) => (
-                <div className="summaryItem" key={label}>
-                  <span>{label}</span>
-                  <b>{value}</b>
-                  {note && <small>{note}</small>}
-                </div>
-              ))}
-            </div>
-            <button className="panelButton" type="button">ดูรายงานฉบับเต็ม</button>
-          </Panel>
-
-          <Panel title="AI Coach Suggestion">
-            <div className="suggestions">
-              {suggestions.map(([title, body, tag, tone]) => (
-                <div className="suggestion" key={title}>
-                  <Sparkles className={tone} size={24} />
-                  <div>
-                    <b>{title}</b>
-                    <span>{body}</span>
-                  </div>
-                  <em className={tone}>{tag}</em>
-                </div>
-              ))}
-            </div>
-            <button className="panelButton" type="button">ดูแผนการฝึกแนะนำ</button>
-          </Panel>
-
-          <Panel title="Recent Shots">
-            <div className="shotList">
-              {recentShots.map(([id, shot, power, result, time, tone]) => (
-                <div className="shotRow" key={id}>
-                  <span>{id}</span>
-                  <b>{shot}</b>
-                  <small>{power}</small>
-                  <strong className={tone}>{result}</strong>
-                  <time>{time}</time>
-                </div>
-              ))}
-            </div>
-            <button className="panelButton" type="button">ดูเพิ่มเติม</button>
-          </Panel>
+        <section className="secondaryGrid">
+          <SessionSummary />
+          <SpeedCard />
+          <RecentShots />
         </section>
 
-        <section className="deviceGrid">
-          <Panel title="Sensor Status">
-            <div className="deviceList">
-              {sensorCards.map(([name, image]) => <DeviceCard name={name} image={image} key={name} />)}
-            </div>
-          </Panel>
-
-          <Panel title="Coach Kit Status">
-            <div className="kitList">
-              {kitCards.map(([name, image]) => <DeviceCard name={name} image={image} key={name} />)}
-            </div>
-          </Panel>
-
-          <Panel title="Quick Action" className="quickPanel">
-            <div className="quickActions">
-              <button type="button"><Play size={19} />เริ่มการฝึกซ้อมใหม่</button>
-              <button type="button"><Video size={19} />วิเคราะห์วิดีโอ</button>
-              <button type="button"><Upload size={19} />อัปโหลดเซสชัน</button>
-              <button type="button"><Medal size={19} />ดูเป้าหมาย</button>
-            </div>
-          </Panel>
+        <section className="bottomGrid">
+          <DevicesCard />
+          <QuickActions />
         </section>
       </main>
     </div>
