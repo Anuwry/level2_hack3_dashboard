@@ -334,6 +334,231 @@ button {
   font-size: 12px;
 }
 
+.simulationPanel {
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(13, 26, 38, 0.84), rgba(7, 18, 29, 0.92));
+  box-shadow: var(--shadow);
+}
+
+.simulationHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 13px;
+}
+
+.simulationHeader span,
+.simulationMetrics span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.simulationHeader h2 {
+  margin: 3px 0 4px;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.simulationHeader p {
+  margin: 0;
+  color: #b7c8d4;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.simulationPlayer {
+  display: grid;
+  min-width: 168px;
+  gap: 2px;
+  padding: 10px 12px;
+  text-align: right;
+  border: 1px solid rgba(95, 229, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(8, 20, 31, 0.72);
+}
+
+.simulationPlayer b {
+  font-size: 15px;
+}
+
+.simulationPlayer span {
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.simulationBody {
+  display: grid;
+  grid-template-columns: 270px minmax(380px, 1fr) 210px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.simulationRows {
+  display: grid;
+  gap: 7px;
+  align-content: start;
+}
+
+.simulationRows button {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 54px;
+  gap: 6px 9px;
+  align-items: center;
+  min-height: 58px;
+  padding: 9px;
+  color: var(--text);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.68);
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.simulationRows button:hover,
+.simulationRows button:focus-visible,
+.simulationRows button.active {
+  border-color: rgba(36, 236, 164, 0.42);
+  background: rgba(36, 236, 164, 0.08);
+  transform: translateY(-1px);
+}
+
+.simulationRows span,
+.simulationRows small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.simulationRows b {
+  font-size: 15px;
+}
+
+.simulationRows em {
+  grid-column: 2;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.simulationRows em.green {
+  color: var(--green);
+}
+
+.simulationRows em.cyan {
+  color: var(--cyan);
+}
+
+.simulationRows em.orange {
+  color: var(--orange);
+}
+
+.simulationRows strong {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  color: var(--green);
+  font-size: 21px;
+  text-align: right;
+}
+
+.simulationRows small {
+  grid-column: 1;
+}
+
+.simulationStage {
+  position: relative;
+  min-height: 282px;
+  overflow: hidden;
+  border: 1px solid rgba(95, 229, 255, 0.13);
+  border-radius: 9px;
+  background: #07121d;
+}
+
+.threeViewport {
+  width: 100%;
+  height: 100%;
+  min-height: 282px;
+}
+
+.threeViewport canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.simulationHud {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: grid;
+  gap: 2px;
+  padding: 9px 10px;
+  border: 1px solid rgba(95, 229, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.simulationHud span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.simulationHud b {
+  color: var(--green);
+  font-size: 14px;
+}
+
+.simulationMetrics {
+  display: grid;
+  gap: 8px;
+}
+
+.simulationMetrics div {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  min-height: 62px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.68);
+}
+
+.simulationMetrics b {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.simulationMetrics small {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.simulationMetrics i {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(138, 174, 199, 0.16);
+}
+
+.simulationMetrics i span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+}
+
 .categoryGrid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1354,6 +1579,15 @@ button {
   .deviceGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .simulationBody {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+
+  .simulationMetrics {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 900px) {
@@ -1366,9 +1600,26 @@ button {
     height: auto;
   }
 
+  .main {
+    padding: 18px 14px 28px;
+  }
+
   .header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .simulationHeader,
+  .simulationBody {
+    grid-template-columns: 1fr;
+  }
+
+  .simulationHeader {
+    display: grid;
+  }
+
+  .simulationPlayer {
+    text-align: left;
   }
 
   .categoryGrid,
@@ -1382,6 +1633,10 @@ button {
   .graphLayout,
   .speedBody,
   .deviceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .simulationMetrics {
     grid-template-columns: 1fr;
   }
 

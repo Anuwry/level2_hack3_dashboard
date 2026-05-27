@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
 import {
   Activity,
   BatteryFull,
@@ -1024,13 +1025,247 @@ function createPageMockups(player, data) {
   }
 }
 
-function OverviewPage({ categories, onCategoryClick }) {
+function getShotSimulationMetrics(shot) {
+  const power = Number(shot?.[3] || 0)
+  const shotType = shot?.[1] || 'Shot'
+  const accelPeak = Number((0.82 + power / 82).toFixed(2))
+  const gyroPeak = Math.round(70 + power * 2.25)
+  const duration = shotType === 'Smash' ? 920 : shotType === 'Drive' ? 760 : 1120
+  const impactOffset = Math.round(duration * 0.64)
+
+  return {
+    power,
+    accelPeak,
+    gyroPeak,
+    duration,
+    impactOffset,
+    trail: Math.min(100, Math.round(power * 0.92 + accelPeak * 5)),
+  }
+}
+
+function SwingSimulationPanel({ player, shots }) {
+  const mountRef = useRef(null)
+  const selectedShot = shots[0] || recentShots[0]
+  const [selectedShotId, setSelectedShotId] = useState(selectedShot[0])
+  const activeShot = shots.find(([id]) => id === selectedShotId) || selectedShot
+  const metrics = getShotSimulationMetrics(activeShot)
+
+  useEffect(() => {
+    const mount = mountRef.current
+    if (!mount) return undefined
+
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color(0x07121d)
+    scene.fog = new THREE.Fog(0x07121d, 4, 13)
+
+    const camera = new THREE.PerspectiveCamera(54, 1, 0.1, 100)
+    camera.position.set(0, 1.42, 4.3)
+    camera.lookAt(0.05, 1.06, 0.2)
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setSize(mount.clientWidth, mount.clientHeight)
+    mount.appendChild(renderer.domElement)
+
+    scene.add(new THREE.HemisphereLight(0xd9f8ff, 0x08111b, 2.15))
+    const rimLight = new THREE.DirectionalLight(0x5fe5ff, 2.4)
+    rimLight.position.set(-2, 3, 4)
+    scene.add(rimLight)
+    const impactLight = new THREE.PointLight(0x24eca4, 0, 5)
+    impactLight.position.set(0.6, 1.58, 0.18)
+    scene.add(impactLight)
+
+    const grid = new THREE.GridHelper(8, 12, 0x12354b, 0x0d2536)
+    grid.position.y = -0.04
+    scene.add(grid)
+
+    const materialSkin = new THREE.MeshStandardMaterial({ color: 0x2b6fb8, roughness: 0.42, metalness: 0.08 })
+    const materialGrip = new THREE.MeshStandardMaterial({ color: 0x111820, roughness: 0.78, metalness: 0.22 })
+    const materialShaft = new THREE.MeshStandardMaterial({ color: 0xc8f3ff, roughness: 0.22, metalness: 0.65 })
+    const materialFrame = new THREE.MeshStandardMaterial({ color: 0x72eaff, roughness: 0.2, metalness: 0.55 })
+    const materialString = new THREE.MeshBasicMaterial({ color: 0xa8f4ff, transparent: true, opacity: 0.36 })
+    const materialTrail = new THREE.MeshBasicMaterial({ color: 0x24eca4, transparent: true, opacity: 0.24 })
+    const materialImpact = new THREE.MeshBasicMaterial({ color: 0x24eca4 })
+
+    const arm = new THREE.Group()
+    scene.add(arm)
+
+    const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.1, 24), materialSkin)
+    forearm.rotation.z = -0.52
+    forearm.rotation.x = 0.2
+    forearm.position.set(-0.42, 0.75, 1.42)
+    arm.add(forearm)
+
+    const wrist = new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 16), materialSkin)
+    wrist.position.set(-0.06, 1.08, 1.02)
+    arm.add(wrist)
+
+    const racket = new THREE.Group()
+    racket.position.set(0, 1.1, 0.95)
+    arm.add(racket)
+
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.68, 24), materialGrip)
+    grip.rotation.z = -0.72
+    grip.position.set(0.22, -0.2, 0)
+    racket.add(grip)
+
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.021, 1.35, 18), materialShaft)
+    shaft.rotation.z = -0.72
+    shaft.position.set(0.58, 0.28, -0.05)
+    racket.add(shaft)
+
+    const head = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.02, 16, 80), materialFrame)
+    head.scale.set(0.8, 1.22, 0.08)
+    head.rotation.z = -0.72
+    head.position.set(1.02, 0.82, -0.12)
+    racket.add(head)
+
+    const strings = new THREE.Group()
+    for (let index = -3; index <= 3; index += 1) {
+      const string = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.58, 0.003), materialString)
+      string.position.x = index * 0.055
+      strings.add(string)
+      const cross = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.006, 0.003), materialString)
+      cross.position.y = index * 0.07
+      strings.add(cross)
+    }
+    strings.rotation.z = -0.72
+    strings.position.set(1.02, 0.82, -0.12)
+    racket.add(strings)
+
+    const trail = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.012, 10, 70, Math.PI * 1.2), materialTrail)
+    trail.scale.set(1, 0.52, 0.08)
+    trail.rotation.set(0.22, 0.15, -0.35)
+    trail.position.set(0.62, 1.24, 0.45)
+    scene.add(trail)
+
+    const shuttle = new THREE.Mesh(new THREE.SphereGeometry(0.045, 20, 14), materialImpact)
+    shuttle.position.set(0.82, 1.58, 0.24)
+    scene.add(shuttle)
+
+    const clock = new THREE.Clock()
+    let animationFrame = 0
+    const resizeObserver = new ResizeObserver(() => {
+      const width = mount.clientWidth
+      const height = mount.clientHeight
+      if (!width || !height) return
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height)
+    })
+    resizeObserver.observe(mount)
+
+    const animate = () => {
+      const elapsed = clock.getElapsedTime()
+      const phase = (elapsed % 2.8) / 2.8
+      const swing = Math.sin(phase * Math.PI)
+      const snap = Math.max(0, 1 - Math.abs(phase - 0.64) * 12)
+      const powerFactor = metrics.power / 100
+
+      arm.rotation.y = -0.42 + swing * (0.56 + powerFactor * 0.42)
+      arm.rotation.x = -0.08 + Math.sin(phase * Math.PI * 2) * 0.16
+      racket.rotation.z = -0.52 + swing * (1.18 + powerFactor * 0.62)
+      racket.rotation.y = 0.28 - swing * 0.42
+      trail.material.opacity = 0.1 + swing * 0.28
+      impactLight.intensity = snap * 3.4
+      shuttle.scale.setScalar(1 + snap * 1.8)
+      shuttle.material.color.setHex(snap > 0.2 ? 0x24eca4 : 0x5fe5ff)
+
+      renderer.render(scene, camera)
+      animationFrame = requestAnimationFrame(animate)
+    }
+
+    animate()
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+      resizeObserver.disconnect()
+      mount.removeChild(renderer.domElement)
+      renderer.dispose()
+      scene.traverse((object) => {
+        if (!object.isMesh) return
+        object.geometry?.dispose()
+        const materials = Array.isArray(object.material) ? object.material : [object.material]
+        materials.forEach((material) => material?.dispose())
+      })
+    }
+  }, [activeShot, metrics.power])
+
   return (
-    <section className="categoryGrid" aria-label="Dashboard categories">
-      {categories.map((item) => (
-        <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
-      ))}
+    <section className="simulationPanel" aria-label="3D swing simulation">
+      <div className="simulationHeader">
+        <div>
+          <span>3D Replay</span>
+          <h2>First-person Swing Simulation</h2>
+          <p>Click a shot row to replay an estimated racket motion from the sensor pattern.</p>
+        </div>
+        <div className="simulationPlayer">
+          <b>{player.name}</b>
+          <span>{player.level} · baseline {player.baseline}/100</span>
+        </div>
+      </div>
+
+      <div className="simulationBody">
+        <div className="simulationRows">
+          {shots.map((shot) => {
+            const [id, type, result, power, time, tone] = shot
+            return (
+              <button className={id === selectedShotId ? 'active' : ''} type="button" onClick={() => setSelectedShotId(id)} key={id}>
+                <span>#{id}</span>
+                <b>{type}</b>
+                <em className={tone}>{result}</em>
+                <strong>{power}</strong>
+                <small>{time}</small>
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="simulationStage">
+          <div className="threeViewport" ref={mountRef} />
+          <div className="simulationHud">
+            <span>Selected #{activeShot[0]} · {activeShot[1]}</span>
+            <b>{activeShot[2]}</b>
+          </div>
+        </div>
+
+        <div className="simulationMetrics">
+          <div>
+            <span>Power</span>
+            <b>{metrics.power}<small>/100</small></b>
+            <i><span style={{ width: `${metrics.power}%` }} /></i>
+          </div>
+          <div>
+            <span>Gyro Peak</span>
+            <b>{metrics.gyroPeak}<small>dps</small></b>
+            <i><span style={{ width: `${Math.min(metrics.gyroPeak / 3.1, 100)}%` }} /></i>
+          </div>
+          <div>
+            <span>Accel Peak</span>
+            <b>{metrics.accelPeak}<small>g</small></b>
+            <i><span style={{ width: `${Math.min(metrics.accelPeak * 34, 100)}%` }} /></i>
+          </div>
+          <div>
+            <span>Impact</span>
+            <b>{metrics.impactOffset}<small>ms</small></b>
+            <i><span style={{ width: `${Math.min(metrics.impactOffset / metrics.duration * 100, 100)}%` }} /></i>
+          </div>
+        </div>
+      </div>
     </section>
+  )
+}
+
+function OverviewPage({ categories, onCategoryClick, player, data }) {
+  return (
+    <>
+      <SwingSimulationPanel player={player} shots={data.recentShots} />
+      <section className="categoryGrid" aria-label="Dashboard categories">
+        {categories.map((item) => (
+          <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
+        ))}
+      </section>
+    </>
   )
 }
 
@@ -1268,7 +1503,7 @@ export default function App() {
             onSelectPlayer={handleSelectPlayer}
           />
           {activePage === 'overview' ? (
-            <OverviewPage categories={categories} onCategoryClick={setSelectedId} />
+            <OverviewPage categories={categories} onCategoryClick={setSelectedId} player={selectedPlayer} data={currentData} />
           ) : (
             <MockupPage page={currentMockup} onVisualizationOpen={setSelectedVisualizationId} />
           )}
