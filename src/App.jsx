@@ -1225,16 +1225,16 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
       const impactIndex = imuSummary ? (imuSummary.peakGyroIndex - selectedSampleStart + activeSamples.length) % activeSamples.length : 0
       const impactPhase = imuSummary ? impactIndex / Math.max(activeSamples.length - 1, 1) : 0.64
       const snap = Math.max(0, 1 - Math.abs(phase - impactPhase) * 14)
-      const powerFactor = metrics.power / 100
       const gx = sample ? sample.gx_dps / Math.max(metrics.gyroPeak, 1) : 0
       const gy = sample ? sample.gy_dps / Math.max(metrics.gyroPeak, 1) : 0
       const gz = sample ? sample.gz_dps / Math.max(metrics.gyroPeak, 1) : 0
       const accelFactor = sample ? Math.min(sample.accel_mag_g / Math.max(metrics.accelPeak, 1), 1) : swing
 
-      arm.rotation.y = -0.42 + swing * (0.32 + powerFactor * 0.34) + gy * 0.36
-      arm.rotation.x = -0.08 + Math.sin(phase * Math.PI * 2) * 0.12 + gx * 0.2
-      racket.rotation.z = -0.52 + swing * (0.86 + powerFactor * 0.48) + gz * 0.72
-      racket.rotation.y = 0.24 - swing * 0.34 + gy * 0.24
+      arm.rotation.y = -0.32
+      arm.rotation.x = -0.08
+      racket.rotation.x = gx * 0.85
+      racket.rotation.y = 0.18 + gy * 0.9
+      racket.rotation.z = -0.52 + gz * 1.35
       trail.material.opacity = 0.08 + accelFactor * 0.34
       impactLight.intensity = snap * 3.8
       shuttle.scale.setScalar(1 + snap * 1.8)
@@ -1278,8 +1278,8 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
       <div className="simulationHeader">
         <div>
           <span>3D Replay</span>
-          <h2>First-person Swing Simulation</h2>
-          <p>Using real IMU data from sweet_spot_0001_20260527_103446_imu.csv. Each row below is one sensor sample; click a sample to start replay from that row.</p>
+          <h2>Racket-mounted IMU Replay</h2>
+          <p>Using real IMU data from the sensor attached to the racket. Each row is one sensor sample; click a sample to start replay from that row.</p>
         </div>
         <div className="simulationPlayer">
           <b>{player.name}</b>
@@ -1312,7 +1312,7 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
         <div className="simulationStage">
           <div className="threeViewport" ref={mountRef} />
           <div className="simulationHud">
-            <span>CSV row / IMU sample</span>
+            <span>Racket IMU sample</span>
             <b>{frameInfo ? `row ${frameInfo.sampleIndex}` : 'loading sample'}</b>
             <small>Replay start row {selectedSampleStart + 1} · {activeSamples.length} samples total</small>
             <dl>
