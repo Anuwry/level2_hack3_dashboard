@@ -1033,32 +1033,11 @@ button {
   place-items: center;
   margin: 0 auto;
   border-radius: 50%;
-  background: conic-gradient(var(--red) 0 18%, var(--orange) 18% 30%, var(--green) 30% 78%, var(--cyan) 78% 100%);
+  background: conic-gradient(var(--red) 0 18%, var(--orange) 18% 30%, var(--green) 30% 100%);
 }
 
 .donut::before {
   display: none;
-}
-
-.donut div {
-  position: relative;
-  text-align: center;
-  text-shadow: 0 2px 10px rgba(4, 14, 22, 0.8);
-}
-
-.donut b,
-.donut span {
-  display: block;
-}
-
-.donut b {
-  font-size: 42px;
-  line-height: 1;
-}
-
-.donut span {
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .formStatList {
