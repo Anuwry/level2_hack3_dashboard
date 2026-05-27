@@ -422,8 +422,9 @@ button {
 
 .simulationRows button {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 54px;
-  gap: 6px 9px;
+  grid-template-columns: 54px minmax(0, 1fr) 58px;
+  grid-template-rows: auto auto;
+  gap: 4px 9px;
   align-items: center;
   min-height: 58px;
   padding: 9px;
@@ -475,14 +476,16 @@ button {
 
 .simulationRows strong {
   grid-column: 3;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   color: var(--green);
   font-size: 21px;
   text-align: right;
 }
 
 .simulationRows small {
-  grid-column: 1;
+  grid-column: 3;
+  grid-row: 2;
+  text-align: right;
 }
 
 .simulationStage {
@@ -504,6 +507,100 @@ button {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.waveformStage {
+  position: relative;
+  min-height: 282px;
+  overflow: hidden;
+  border: 1px solid rgba(95, 229, 255, 0.13);
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 68% 18%, rgba(36, 236, 164, 0.12), transparent 28%),
+    #07121d;
+}
+
+.waveformChart {
+  display: block;
+  width: 100%;
+  height: 282px;
+  padding: 12px;
+}
+
+.gridLine {
+  stroke: rgba(138, 174, 199, 0.12);
+  stroke-width: 1;
+}
+
+.gyroWave,
+.accelWave {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.gyroWave {
+  stroke: url("#waveFill");
+  stroke-width: 4;
+  filter: drop-shadow(0 0 8px rgba(40, 215, 245, 0.28));
+}
+
+.accelWave {
+  stroke: rgba(255, 172, 56, 0.82);
+  stroke-width: 2.4;
+}
+
+.impactMarker {
+  stroke: rgba(255, 92, 98, 0.92);
+  stroke-dasharray: 6 6;
+  stroke-width: 2;
+}
+
+.selectedMarker {
+  stroke: rgba(242, 247, 250, 0.9);
+  stroke-width: 2;
+}
+
+.waveformLegend {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+  padding: 8px 9px;
+  border: 1px solid rgba(95, 229, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.waveformLegend span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #b7c8d4;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.waveformLegend i {
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.gyroKey {
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+}
+
+.accelKey {
+  background: var(--orange);
+}
+
+.impactKey {
+  background: var(--red);
 }
 
 .simulationHud {

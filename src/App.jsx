@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
-import * as THREE from 'three'
+import React, { useMemo, useState } from 'react'
 import sweetSpotImuCsv from '../sweet_spot_0001_20260527_103446_imu.csv?raw'
 import {
   Activity,
@@ -1353,10 +1352,146 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
   )
 }
 
+function buildWavePath(samples, key, maxValue, width = 680, height = 220) {
+  if (!samples.length || !maxValue) return ''
+
+  return samples
+    .map((sample, index) => {
+      const x = (index / Math.max(samples.length - 1, 1)) * width
+      const y = height - (sample[key] / maxValue) * (height - 28) - 14
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
+    })
+    .join(' ')
+}
+
+function getConsistencyScore(samples) {
+  if (samples.length < 2) return 0
+
+  const gyroValues = samples.map((sample) => sample.gyro_mag_dps)
+  const mean = gyroValues.reduce((total, value) => total + value, 0) / gyroValues.length
+  const variance = gyroValues.reduce((total, value) => total + (value - mean) ** 2, 0) / gyroValues.length
+  const coefficient = Math.sqrt(variance) / Math.max(mean, 1)
+  return Math.max(0, Math.min(100, Math.round(100 - coefficient * 38)))
+}
+
+function ConsistencyWaveformPanel({ player, imuSamples = [] }) {
+  const [selectedSampleIndex, setSelectedSampleIndex] = useState(0)
+  const summary = getImuSummary(imuSamples)
+  const selectedSample = imuSamples[selectedSampleIndex] || imuSamples[0]
+  const consistencyScore = getConsistencyScore(imuSamples)
+  const sampleRows = useMemo(() => imuSamples.map((sample, index) => ({
+    index,
+    sampleNo: index + 1,
+    time: Math.round(sample.pc_elapsed_ms - imuSamples[0].pc_elapsed_ms),
+    accel: sample.accel_mag_g.toFixed(2),
+    gyro: Math.round(sample.gyro_mag_dps),
+  })), [imuSamples])
+  const maxGyro = Math.max(...imuSamples.map((sample) => sample.gyro_mag_dps), 1)
+  const maxAccel = Math.max(...imuSamples.map((sample) => sample.accel_mag_g), 1)
+  const gyroPath = buildWavePath(imuSamples, 'gyro_mag_dps', maxGyro)
+  const accelPath = buildWavePath(imuSamples, 'accel_mag_g', maxAccel)
+  const peakX = summary ? (summary.peakGyroIndex / Math.max(imuSamples.length - 1, 1)) * 680 : 0
+  const selectedX = (selectedSampleIndex / Math.max(imuSamples.length - 1, 1)) * 680
+  const selectedTime = selectedSample ? Math.round(selectedSample.pc_elapsed_ms - imuSamples[0].pc_elapsed_ms) : 0
+
+  return (
+    <section className="simulationPanel" aria-label="Consistency waveform analysis">
+      <div className="simulationHeader">
+        <div>
+          <span>Racket IMU</span>
+          <h2>Consistency Waveform</h2>
+          <p>Waveform from the racket-mounted IMU. Each row is one sensor sample; click a sample to inspect the exact gyro and acceleration values.</p>
+        </div>
+        <div className="simulationPlayer">
+          <b>{player.name}</b>
+          <span>Real IMU · {summary?.samples || 0} samples</span>
+        </div>
+      </div>
+
+      <div className="simulationBody">
+        <div className="simulationRows">
+          {sampleRows.map((sample) => (
+            <button
+              className={selectedSampleIndex === sample.index ? 'active' : ''}
+              type="button"
+              onClick={() => setSelectedSampleIndex(sample.index)}
+              key={sample.sampleNo}
+            >
+              <span>row {sample.sampleNo}</span>
+              <b>{sample.time}ms</b>
+              <em className={sample.gyro > 300 ? 'green' : sample.gyro > 120 ? 'cyan' : 'orange'}>gyro {sample.gyro}</em>
+              <strong>{sample.accel}</strong>
+              <small>accel g</small>
+            </button>
+          ))}
+        </div>
+
+        <div className="waveformStage">
+          <svg className="waveformChart" viewBox="0 0 680 220" role="img" aria-label="Gyro and acceleration waveform">
+            <defs>
+              <linearGradient id="waveFill" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0%" stopColor="#28d7f5" />
+                <stop offset="100%" stopColor="#29e38c" />
+              </linearGradient>
+            </defs>
+            {[44, 88, 132, 176].map((y) => <line className="gridLine" x1="0" x2="680" y1={y} y2={y} key={y} />)}
+            {[170, 340, 510].map((x) => <line className="gridLine" x1={x} x2={x} y1="0" y2="220" key={x} />)}
+            <path className="accelWave" d={accelPath} />
+            <path className="gyroWave" d={gyroPath} />
+            <line className="impactMarker" x1={peakX} x2={peakX} y1="0" y2="220" />
+            <line className="selectedMarker" x1={selectedX} x2={selectedX} y1="0" y2="220" />
+          </svg>
+          <div className="waveformLegend">
+            <span><i className="gyroKey" />gyro magnitude</span>
+            <span><i className="accelKey" />acceleration magnitude</span>
+            <span><i className="impactKey" />impact candidate</span>
+          </div>
+          <div className="simulationHud">
+            <span>Selected IMU sample</span>
+            <b>row {selectedSampleIndex + 1}</b>
+            <small>{selectedTime}ms from start</small>
+            <dl>
+              <div><dt>gx</dt><dd>{Math.round(selectedSample?.gx_dps || 0)}</dd></div>
+              <div><dt>gy</dt><dd>{Math.round(selectedSample?.gy_dps || 0)}</dd></div>
+              <div><dt>gz</dt><dd>{Math.round(selectedSample?.gz_dps || 0)}</dd></div>
+              <div><dt>accel</dt><dd>{selectedSample?.accel_mag_g.toFixed(2) || '0.00'}g</dd></div>
+              <div><dt>gyro</dt><dd>{Math.round(selectedSample?.gyro_mag_dps || 0)}</dd></div>
+              <div><dt>score</dt><dd>{consistencyScore}</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <div className="simulationMetrics">
+          <div>
+            <span>Consistency</span>
+            <b>{consistencyScore}<small>/100</small></b>
+            <i><span style={{ width: `${consistencyScore}%` }} /></i>
+          </div>
+          <div>
+            <span>Gyro Peak</span>
+            <b>{Math.round(summary?.peakGyro || 0)}<small>dps</small></b>
+            <i><span style={{ width: `${Math.min((summary?.peakGyro || 0) / 6, 100)}%` }} /></i>
+          </div>
+          <div>
+            <span>Accel Peak</span>
+            <b>{summary?.peakAccel.toFixed(2) || '0.00'}<small>g</small></b>
+            <i><span style={{ width: `${Math.min((summary?.peakAccel || 0) * 20, 100)}%` }} /></i>
+          </div>
+          <div>
+            <span>Impact Candidate</span>
+            <b>{Math.round(summary?.impactOffset || 0)}<small>ms</small></b>
+            <i><span style={{ width: `${Math.min(((summary?.impactOffset || 0) / Math.max(summary?.duration || 1, 1)) * 100, 100)}%` }} /></i>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function OverviewPage({ categories, onCategoryClick, player, data, imuSamples }) {
   return (
     <>
-      <SwingSimulationPanel player={player} shots={data.recentShots} imuSamples={imuSamples} />
+      <ConsistencyWaveformPanel player={player} imuSamples={imuSamples} />
       <section className="categoryGrid" aria-label="Dashboard categories">
         {categories.map((item) => (
           <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
