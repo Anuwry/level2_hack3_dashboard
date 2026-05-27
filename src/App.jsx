@@ -73,6 +73,104 @@ const recentShots = [
   ['37', 'Smash', 'Sweet Spot', '95', '01:12', 'green'],
 ]
 
+const players = [
+  { id: 'player1', number: '01', name: 'Player 01', level: 'Intermediate', hand: 'Right', baseline: 82 },
+  { id: 'player2', number: '02', name: 'Player 02', level: 'Beginner', hand: 'Right', baseline: 64 },
+  { id: 'player3', number: '03', name: 'Player 03', level: 'Advanced', hand: 'Left', baseline: 91 },
+]
+
+const playerDatasets = {
+  player1: {
+    timer: '00:18:36',
+    drill: 'Smash Accuracy',
+    targetShots: 60,
+    bestDate: 'May 26',
+    scores,
+    formStats,
+    summaryItems,
+    recentShots,
+    advice: {
+      title: 'Start the swing slightly earlier.',
+      body: 'Timing is the weakest score at 68/100. Begin the swing earlier before the shuttle reaches the contact point.',
+      steps: ['Bring elbow angle closer to 100°.', 'Keep the impact point near the center of the racket.', 'Add Drop and Drive shots for more variety.'],
+    },
+  },
+  player2: {
+    timer: '00:14:08',
+    drill: 'Timing Basics',
+    targetShots: 45,
+    bestDate: 'May 24',
+    scores: [
+      { label: 'Power', value: 62, icon: Zap, tone: 'cyan', note: 'Building controlled power' },
+      { label: 'Timing', value: 58, icon: Clock3, tone: 'orange', note: 'Often late on contact' },
+      { label: 'Sweet Spot', value: 61, icon: Target, tone: 'green', note: 'Needs cleaner center contact' },
+      { label: 'Injury Risk', value: 'Low', icon: ShieldAlert, tone: 'cyan', note: 'Form is controlled' },
+    ],
+    formStats: [
+      ['Elbow Incorrect', 'Used for Injury Risk', '6', 'orange'],
+      ['Incorrect Shots', '', '18', 'orange'],
+      ['Correct Shots', '', '14', 'green'],
+      ['Total Shots', '', '32', 'cyan'],
+    ],
+    summaryItems: [
+      ['Total Shots', '32', '', Target],
+      ['Best Shot', 'Clear #18', 'Power 74', Medal],
+      ['Calories', '142 kcal', '', Flame],
+      ['Avg Power', '61.8', '', Zap],
+      ['Max Power', '74', '', Activity],
+      ['Consistency', '54%', '', Gauge],
+    ],
+    recentShots: [
+      ['32', 'Clear', 'Timing', '62', '01:05', 'orange'],
+      ['31', 'Drop', 'Good', '68', '01:03', 'green'],
+      ['30', 'Clear', 'Late', '56', '01:00', 'orange'],
+      ['29', 'Drive', 'Timing', '59', '00:58', 'cyan'],
+    ],
+    advice: {
+      title: 'Keep the swing compact before adding power.',
+      body: 'Timing and sweet spot are still developing. Use shorter reps and keep the racket face stable through contact.',
+      steps: ['Run 10 slow clear shots before full speed.', 'Pause after contact and check racket face direction.', 'Use a lower target speed until timing reaches 70/100.'],
+    },
+  },
+  player3: {
+    timer: '00:22:41',
+    drill: 'Attack Variation',
+    targetShots: 75,
+    bestDate: 'May 27',
+    scores: [
+      { label: 'Power', value: 94, icon: Zap, tone: 'green', note: 'Elite smash output' },
+      { label: 'Timing', value: 86, icon: Clock3, tone: 'cyan', note: 'Stable contact window' },
+      { label: 'Sweet Spot', value: 93, icon: Target, tone: 'green', note: 'Very clean impact quality' },
+      { label: 'Injury Risk', value: 'Medium', icon: ShieldAlert, tone: 'orange', note: 'High load on repeated smashes' },
+    ],
+    formStats: [
+      ['Elbow Incorrect', 'Used for Injury Risk', '9', 'orange'],
+      ['Incorrect Shots', '', '7', 'orange'],
+      ['Correct Shots', '', '49', 'green'],
+      ['Total Shots', '', '56', 'cyan'],
+    ],
+    summaryItems: [
+      ['Total Shots', '56', '', Target],
+      ['Best Shot', 'Smash #43', 'Power 99', Medal],
+      ['Calories', '286 kcal', '', Flame],
+      ['Avg Power', '88.4', '', Zap],
+      ['Max Power', '99', '', Activity],
+      ['Consistency', '84%', '', Gauge],
+    ],
+    recentShots: [
+      ['56', 'Smash', 'Sweet Spot', '96', '01:42', 'green'],
+      ['55', 'Drive', 'Good', '84', '01:40', 'cyan'],
+      ['54', 'Smash', 'Sweet Spot', '99', '01:38', 'green'],
+      ['53', 'Drop', 'Good', '79', '01:35', 'green'],
+    ],
+    advice: {
+      title: 'Reduce overload during long smash blocks.',
+      body: 'Performance is strong, but repeated high-power shots can raise elbow load. Mix recovery shots into attack drills.',
+      steps: ['Alternate 3 smashes with 2 recovery clears.', 'Stop the set if elbow angle opens beyond 115°.', 'Track fatigue after every 15 shots.'],
+    },
+  },
+}
+
 const visualizationSets = {
   shotList: {
     title: 'Shot List Visualization',
@@ -239,7 +337,7 @@ function Sidebar({ activePage, onPageChange }) {
   )
 }
 
-function Header({ activePage }) {
+function Header({ activePage, selectedPlayer, playerOptions, isPlayerMenuOpen, onTogglePlayerMenu, onSelectPlayer }) {
   const pageTitle = navItems.find((item) => item.id === activePage)?.label || 'Overview'
 
   return (
@@ -255,10 +353,27 @@ function Header({ activePage }) {
           <span>Bluetooth 5.2</span>
           <b>Connected</b>
         </div>
-        <div className="playerPill">
-          <div>01</div>
-          <span>Player 01</span>
-          <b>Intermediate</b>
+        <div className="playerSwitcher">
+          <button className="playerPill" type="button" onClick={onTogglePlayerMenu} aria-expanded={isPlayerMenuOpen}>
+            <div>{selectedPlayer.number}</div>
+            <span>{selectedPlayer.name}</span>
+            <b>{selectedPlayer.level}</b>
+          </button>
+          {isPlayerMenuOpen && (
+            <div className="playerMenu">
+              {playerOptions.map((player) => (
+                <button
+                  className={player.id === selectedPlayer.id ? 'active' : ''}
+                  type="button"
+                  key={player.id}
+                  onClick={() => onSelectPlayer(player.id)}
+                >
+                  <strong>{player.name}</strong>
+                  <span>{player.level} · {player.hand} hand · {player.baseline}/100</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </header>
@@ -279,10 +394,10 @@ function CategoryCard({ item, onClick }) {
   )
 }
 
-function ScoreOverview() {
+function ScoreOverview({ items = scores }) {
   return (
     <div className="scoreGrid">
-      {scores.map((item) => {
+      {items.map((item) => {
         const Icon = item.icon
         const isNumber = typeof item.value === 'number'
         return (
@@ -347,17 +462,17 @@ function SweetSpotDetail() {
   )
 }
 
-function FormAnalysisDetail() {
+function FormAnalysisDetail({ stats = formStats }) {
   return (
     <div className="formAnalysisDetail">
       <div className="donut">
         <div>
-          <b>40</b>
+          <b>{stats.at(-1)?.[2] || 0}</b>
           <span>Total Shots</span>
         </div>
       </div>
       <div className="formStatList">
-        {formStats.map(([label, note, value, tone]) => (
+        {stats.map(([label, note, value, tone]) => (
           <div className={`formStat ${tone}`} key={label}>
             <span>
               {label}
@@ -371,30 +486,30 @@ function FormAnalysisDetail() {
   )
 }
 
-function CoachAdvice() {
+function CoachAdvice({ advice = playerDatasets.player1.advice }) {
   return (
     <div className="adviceDetail">
       <div className="advicePrimary">
         <Sparkles size={24} />
         <div>
-          <b>Start the swing slightly earlier.</b>
-          <p>Timing is the weakest score at 68/100. Begin the swing earlier before the shuttle reaches the contact point.</p>
+          <b>{advice.title}</b>
+          <p>{advice.body}</p>
         </div>
       </div>
       <ul className="cleanList">
-        <li><span>1</span>Bring elbow angle closer to 100°.</li>
-        <li><span>2</span>Keep the impact point near the center of the racket.</li>
-        <li><span>3</span>Add Drop and Drive shots for more variety.</li>
+        {advice.steps.map((step, index) => (
+          <li key={step}><span>{index + 1}</span>{step}</li>
+        ))}
       </ul>
     </div>
   )
 }
 
-function SessionDetail() {
+function SessionDetail({ items = summaryItems }) {
   return (
     <div className="sessionSummaryDetail">
       <div className="summaryGrid">
-        {summaryItems.map(([label, value, note, Icon]) => (
+        {items.map(([label, value, note, Icon]) => (
           <div key={label}>
             <Icon size={22} />
             <span>{label}</span>
@@ -408,10 +523,10 @@ function SessionDetail() {
   )
 }
 
-function RecentShotsDetail() {
+function RecentShotsDetail({ shots = recentShots }) {
   return (
     <div className="shotList">
-      {recentShots.map(([id, shot, result, power, time, tone]) => (
+      {shots.map(([id, shot, result, power, time, tone]) => (
         <div className="shotRow" key={id}>
           <span>{id}</span>
           <b>{shot}</b>
@@ -463,14 +578,15 @@ function ActionDetail() {
   )
 }
 
-const categories = [
+function getCategories(data) {
+  return [
   {
     id: 'scores',
     kicker: 'Overview',
     title: 'Training Scores',
     description: 'Power, timing, sweet spot, and injury risk.',
     icon: Gauge,
-    content: <ScoreOverview />,
+    content: <ScoreOverview items={data.scores} />,
   },
   {
     id: 'elbow',
@@ -494,7 +610,7 @@ const categories = [
     title: 'Form Analysis',
     description: 'Elbow errors, correct shots, and total shot count.',
     icon: Radar,
-    content: <FormAnalysisDetail />,
+    content: <FormAnalysisDetail stats={data.formStats} />,
   },
   {
     id: 'coach',
@@ -502,7 +618,7 @@ const categories = [
     title: 'Next Action',
     description: 'Recommended correction for the next drill.',
     icon: Sparkles,
-    content: <CoachAdvice />,
+    content: <CoachAdvice advice={data.advice} />,
   },
   {
     id: 'session',
@@ -510,7 +626,7 @@ const categories = [
     title: 'Session Summary',
     description: 'Total shots, best shot, calories, power, and consistency.',
     icon: ChartNoAxesCombined,
-    content: <SessionDetail />,
+    content: <SessionDetail items={data.summaryItems} />,
   },
   {
     id: 'recent-shots',
@@ -518,7 +634,7 @@ const categories = [
     title: 'Recent Shots',
     description: 'Latest attempts with power, timing, and impact result.',
     icon: Clock3,
-    content: <RecentShotsDetail />,
+    content: <RecentShotsDetail shots={data.recentShots} />,
   },
   {
     id: 'speed',
@@ -544,7 +660,8 @@ const categories = [
     icon: Play,
     content: <ActionDetail />,
   },
-]
+  ]
+}
 
 const pageMockups = {
   training: {
@@ -722,7 +839,192 @@ const pageMockups = {
   },
 }
 
-function OverviewPage({ onCategoryClick }) {
+function getShotScore(shots, index = 0) {
+  return Number(shots[index]?.[3] || 0)
+}
+
+function createVisualizationSets(player, data) {
+  const shotRows = data.recentShots.map(([id, shot, result, power]) => ({
+    label: `#${id} ${shot}`,
+    value: Number(power),
+    secondary: result,
+  }))
+  const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
+  const consistency = Number(String(data.summaryItems.find(([label]) => label === 'Consistency')?.[1] || '0').replace('%', ''))
+  const powerScore = data.scores.find((item) => item.label === 'Power')?.value || 0
+  const timingScore = data.scores.find((item) => item.label === 'Timing')?.value || 0
+  const sweetSpotScore = data.scores.find((item) => item.label === 'Sweet Spot')?.value || 0
+
+  return {
+    ...visualizationSets,
+    shotList: {
+      title: `${player.name} Shot List Visualization`,
+      description: 'Recent shot quality by score and result label.',
+      fileName: `${player.id}-shot-list.csv`,
+      rows: shotRows,
+    },
+    sessionHistory: {
+      title: `${player.name} Session History Visualization`,
+      description: 'Overall training score across recent sessions.',
+      fileName: `${player.id}-session-history.csv`,
+      rows: [
+        { label: 'May 01', value: Math.max(player.baseline - 12, 35), secondary: `${Math.max(Number(totalShots) - 18, 18)} shots` },
+        { label: 'May 08', value: Math.max(player.baseline - 8, 40), secondary: `${Math.max(Number(totalShots) - 12, 20)} shots` },
+        { label: 'May 15', value: Math.max(player.baseline - 5, 45), secondary: `${Math.max(Number(totalShots) - 6, 24)} shots` },
+        { label: 'May 22', value: Math.max(player.baseline - 2, 48), secondary: `${Math.max(Number(totalShots) - 2, 26)} shots` },
+        { label: data.bestDate, value: player.baseline, secondary: `${totalShots} shots` },
+      ],
+    },
+    trendCharts: {
+      title: `${player.name} Training Trend Visualization`,
+      description: 'Power, timing, sweet spot, and consistency score trend.',
+      fileName: `${player.id}-training-trends.csv`,
+      rows: [
+        { label: 'Power', value: Number(powerScore), secondary: data.scores[0]?.note || '' },
+        { label: 'Timing', value: Number(timingScore), secondary: data.scores[1]?.note || '' },
+        { label: 'Sweet Spot', value: Number(sweetSpotScore), secondary: data.scores[2]?.note || '' },
+        { label: 'Consistency', value: consistency, secondary: 'Session stability' },
+      ],
+    },
+    liveFeedback: {
+      title: `${player.name} Live Feedback Visualization`,
+      description: 'Latest feedback signals from the current training session.',
+      fileName: `${player.id}-live-feedback.csv`,
+      rows: [
+        { label: 'Impact', value: Number(sweetSpotScore), secondary: data.recentShots[0]?.[2] || 'Good' },
+        { label: 'Timing', value: Number(timingScore), secondary: data.scores[1]?.note || '' },
+        { label: 'Power', value: getShotScore(data.recentShots), secondary: data.recentShots[0]?.[1] || 'Shot' },
+        { label: 'Elbow Form', value: Math.max(100 - Number(data.formStats[0]?.[2] || 0) * 4, 35), secondary: data.formStats[0]?.[2] || '0' },
+      ],
+    },
+    playerHistory: {
+      title: `${player.name} Player History Visualization`,
+      description: 'Baseline progress for the selected player.',
+      fileName: `${player.id}-player-history.csv`,
+      rows: [
+        { label: 'Baseline', value: Math.max(player.baseline - 14, 35), secondary: 'First session' },
+        { label: 'Week 1', value: Math.max(player.baseline - 9, 40), secondary: 'Foundation' },
+        { label: 'Week 2', value: Math.max(player.baseline - 4, 45), secondary: data.drill },
+        { label: 'Current', value: player.baseline, secondary: player.level },
+      ],
+    },
+  }
+}
+
+function createRecordLists(player, data) {
+  const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
+  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')
+  const sessionRows = [
+    [data.bestDate, `${totalShots} shots`, `Overall ${player.baseline}`, bestShot?.[1] || 'Best shot', data.timer],
+    ['May 22', `${Math.max(Number(totalShots) - 2, 20)} shots`, `Overall ${Math.max(player.baseline - 2, 40)}`, data.drill, '17m 12s'],
+    ['May 15', `${Math.max(Number(totalShots) - 6, 18)} shots`, `Overall ${Math.max(player.baseline - 5, 38)}`, 'Technique focus', '20m 02s'],
+    ['May 08', `${Math.max(Number(totalShots) - 12, 16)} shots`, `Overall ${Math.max(player.baseline - 8, 35)}`, 'Form focus', '16m 44s'],
+    ['May 01', `${Math.max(Number(totalShots) - 18, 14)} shots`, `Overall ${Math.max(player.baseline - 12, 30)}`, 'Baseline', '15m 28s'],
+  ]
+  const playerRows = players.map((item) => [
+    item.name,
+    item.level,
+    `${item.hand} hand`,
+    `Overall ${item.id === player.id ? player.baseline : item.baseline}`,
+    item.id === player.id ? 'Active' : 'Inactive',
+  ])
+  const shotRows = data.recentShots.map(([id, shot, result, power, time]) => [`#${id}`, shot, result, `Power ${power}`, time])
+
+  return {
+    ...recordLists,
+    shots: { ...recordLists.shots, rows: shotRows },
+    sessions: { ...recordLists.sessions, rows: sessionRows },
+    players: { ...recordLists.players, rows: playerRows },
+    allData: {
+      ...recordLists.allData,
+      rows: [
+        ...shotRows.slice(0, 2).map((row) => ['Shot', row[0], row[1], row[3], row[4]]),
+        ['Session', data.bestDate, `${totalShots} shots`, `Overall ${player.baseline}`, data.timer],
+        ['Device', 'Core Sensor', 'Connected', 'Battery 100%', 'Seen now'],
+        ['Player', player.name, player.level, `Overall ${player.baseline}`, 'Active'],
+        ['Report', `${player.name} Summary`, 'Ready', 'CSV/PDF', 'Updated today'],
+      ],
+    },
+  }
+}
+
+function createPageMockups(player, data) {
+  const lists = createRecordLists(player, data)
+  const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
+  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')?.[1] || 'Best shot'
+  const latestShot = data.recentShots[0] || ['0', 'Shot', 'Good', '0', '00:00']
+
+  return {
+    ...pageMockups,
+    training: {
+      ...pageMockups.training,
+      primary: [
+        ['Session Timer', data.timer, `${player.name} live duration`],
+        ['Current Drill', data.drill, `${player.level} focus`],
+        ['Shot Count', totalShots, `Target ${data.targetShots} shots`],
+      ],
+      sections: [
+        pageMockups.training.sections[0],
+        {
+          title: 'Live Feedback',
+          items: [`Last shot: ${latestShot[1]} #${latestShot[0]}`, `Impact: ${latestShot[2]}`, data.scores[1]?.note || 'Timing stable', `Current player: ${player.name}`],
+        },
+        pageMockups.training.sections[2],
+      ],
+    },
+    'shot-analysis': {
+      ...pageMockups['shot-analysis'],
+      primary: [
+        ['Selected Shot', `#${latestShot[0]} ${latestShot[1]}`, 'Latest shot'],
+        ['Impact Score', `${getShotScore(data.recentShots)}/100`, latestShot[2]],
+        ['Player', player.name, `${player.level} profile`],
+      ],
+      sections: [
+        {
+          title: 'Shot List',
+          items: data.recentShots.map(([id, shot, result]) => `#${id} ${shot} - ${result}`),
+        },
+        ...pageMockups['shot-analysis'].sections.slice(1),
+      ],
+      records: lists.shots,
+    },
+    reports: {
+      ...pageMockups.reports,
+      primary: [
+        ['Sessions', '12', `${player.name} history`],
+        ['Best Score', String(player.baseline), bestShot],
+        ['Trend', player.baseline >= 85 ? '+12%' : '+6%', `${data.drill} improvement`],
+      ],
+      records: lists.sessions,
+    },
+    'data-explorer': {
+      ...pageMockups['data-explorer'],
+      sections: [
+        {
+          title: 'Filters',
+          items: ['Type: All', 'Date range: This month', `Player: ${player.name}`, 'Status: Any'],
+        },
+        ...pageMockups['data-explorer'].sections.slice(1),
+      ],
+      records: lists.allData,
+    },
+    players: {
+      ...pageMockups.players,
+      primary: [
+        ['Current Player', player.name, player.level],
+        ['Dominant Hand', player.hand, 'Profile setting'],
+        ['Baseline', `${player.baseline}/100`, 'Current average'],
+      ],
+      records: lists.players,
+    },
+    sensors: {
+      ...pageMockups.sensors,
+      records: lists.devices,
+    },
+  }
+}
+
+function OverviewPage({ categories, onCategoryClick }) {
   return (
     <section className="categoryGrid" aria-label="Dashboard categories">
       {categories.map((item) => (
@@ -932,21 +1234,41 @@ function DetailModal({ category, onClose }) {
 
 export default function App() {
   const [activePage, setActivePage] = useState('overview')
+  const [selectedPlayerId, setSelectedPlayerId] = useState(players[0].id)
+  const [isPlayerMenuOpen, setIsPlayerMenuOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [selectedVisualizationId, setSelectedVisualizationId] = useState(null)
+  const selectedPlayer = players.find((player) => player.id === selectedPlayerId) || players[0]
+  const currentData = playerDatasets[selectedPlayer.id] || playerDatasets.player1
+  const categories = getCategories(currentData)
   const selectedCategory = categories.find((item) => item.id === selectedId)
-  const selectedVisualization = visualizationSets[selectedVisualizationId]
-  const currentMockup = pageMockups[activePage]
+  const playerVisualizations = createVisualizationSets(selectedPlayer, currentData)
+  const selectedVisualization = playerVisualizations[selectedVisualizationId]
+  const currentMockups = createPageMockups(selectedPlayer, currentData)
+  const currentMockup = currentMockups[activePage]
   const hasOverlay = Boolean(selectedCategory || selectedVisualization)
+  const handleSelectPlayer = (playerId) => {
+    setSelectedPlayerId(playerId)
+    setSelectedId(null)
+    setSelectedVisualizationId(null)
+    setIsPlayerMenuOpen(false)
+  }
 
   return (
     <div className={`appShell ${hasOverlay ? 'isBlurred' : ''}`}>
       <div className="app">
         <Sidebar activePage={activePage} onPageChange={setActivePage} />
         <main className="main">
-          <Header activePage={activePage} />
+          <Header
+            activePage={activePage}
+            selectedPlayer={selectedPlayer}
+            playerOptions={players}
+            isPlayerMenuOpen={isPlayerMenuOpen}
+            onTogglePlayerMenu={() => setIsPlayerMenuOpen((isOpen) => !isOpen)}
+            onSelectPlayer={handleSelectPlayer}
+          />
           {activePage === 'overview' ? (
-            <OverviewPage onCategoryClick={setSelectedId} />
+            <OverviewPage categories={categories} onCategoryClick={setSelectedId} />
           ) : (
             <MockupPage page={currentMockup} onVisualizationOpen={setSelectedVisualizationId} />
           )}
