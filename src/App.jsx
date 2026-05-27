@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import sweetSpotImuCsv from '../sweet_spot_0001_20260527_103446_imu.csv?raw'
 import {
   Activity,
   BatteryFull,
@@ -25,6 +26,23 @@ import {
 } from 'lucide-react'
 
 const asset = (name) => `/assets/${name}`
+
+function parseImuCsv(csvText) {
+  const [headerLine, ...lines] = csvText.trim().split(/\r?\n/)
+  const headers = headerLine.split(',')
+
+  return lines
+    .filter(Boolean)
+    .map((line) => {
+      const values = line.split(',')
+      return headers.reduce((sample, header, index) => {
+        sample[header] = Number(values[index])
+        return sample
+      }, {})
+    })
+}
+
+const realImuSamples = parseImuCsv(sweetSpotImuCsv)
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -1025,7 +1043,38 @@ function createPageMockups(player, data) {
   }
 }
 
-function getShotSimulationMetrics(shot) {
+function getImuSummary(samples) {
+  if (!samples.length) return null
+
+  const startTime = samples[0].pc_elapsed_ms
+  const lastTime = samples.at(-1).pc_elapsed_ms
+  const peakGyroSample = samples.reduce((peak, sample) => (sample.gyro_mag_dps > peak.gyro_mag_dps ? sample : peak), samples[0])
+  const peakAccelSample = samples.reduce((peak, sample) => (sample.accel_mag_g > peak.accel_mag_g ? sample : peak), samples[0])
+  const peakGyroIndex = samples.indexOf(peakGyroSample)
+
+  return {
+    samples: samples.length,
+    duration: Math.max(lastTime - startTime, 1),
+    peakGyro: peakGyroSample.gyro_mag_dps,
+    peakAccel: peakAccelSample.accel_mag_g,
+    impactOffset: peakGyroSample.pc_elapsed_ms - startTime,
+    peakGyroIndex,
+  }
+}
+
+function getShotSimulationMetrics(shot, imuSummary) {
+  if (imuSummary) {
+    return {
+      power: Math.min(100, Math.round(imuSummary.peakGyro / 6.1)),
+      accelPeak: Number(imuSummary.peakAccel.toFixed(2)),
+      gyroPeak: Math.round(imuSummary.peakGyro),
+      duration: Math.round(imuSummary.duration),
+      impactOffset: Math.round(imuSummary.impactOffset),
+      samples: imuSummary.samples,
+      source: 'Real IMU',
+    }
+  }
+
   const power = Number(shot?.[3] || 0)
   const shotType = shot?.[1] || 'Shot'
   const accelPeak = Number((0.82 + power / 82).toFixed(2))
@@ -1039,16 +1088,18 @@ function getShotSimulationMetrics(shot) {
     gyroPeak,
     duration,
     impactOffset,
-    trail: Math.min(100, Math.round(power * 0.92 + accelPeak * 5)),
+    samples: 0,
+    source: 'Estimated',
   }
 }
 
-function SwingSimulationPanel({ player, shots }) {
+function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
   const mountRef = useRef(null)
   const selectedShot = shots[0] || recentShots[0]
   const [selectedShotId, setSelectedShotId] = useState(selectedShot[0])
   const activeShot = shots.find(([id]) => id === selectedShotId) || selectedShot
-  const metrics = getShotSimulationMetrics(activeShot)
+  const imuSummary = getImuSummary(imuSamples)
+  const metrics = getShotSimulationMetrics(activeShot, imuSummary)
 
   useEffect(() => {
     const mount = mountRef.current
@@ -1159,15 +1210,22 @@ function SwingSimulationPanel({ player, shots }) {
       const elapsed = clock.getElapsedTime()
       const phase = (elapsed % 2.8) / 2.8
       const swing = Math.sin(phase * Math.PI)
-      const snap = Math.max(0, 1 - Math.abs(phase - 0.64) * 12)
+      const sampleIndex = imuSamples.length ? Math.min(imuSamples.length - 1, Math.floor(phase * imuSamples.length)) : 0
+      const sample = imuSamples[sampleIndex]
+      const impactPhase = imuSummary ? imuSummary.peakGyroIndex / Math.max(imuSamples.length - 1, 1) : 0.64
+      const snap = Math.max(0, 1 - Math.abs(phase - impactPhase) * 14)
       const powerFactor = metrics.power / 100
+      const gx = sample ? sample.gx_dps / Math.max(metrics.gyroPeak, 1) : 0
+      const gy = sample ? sample.gy_dps / Math.max(metrics.gyroPeak, 1) : 0
+      const gz = sample ? sample.gz_dps / Math.max(metrics.gyroPeak, 1) : 0
+      const accelFactor = sample ? Math.min(sample.accel_mag_g / Math.max(metrics.accelPeak, 1), 1) : swing
 
-      arm.rotation.y = -0.42 + swing * (0.56 + powerFactor * 0.42)
-      arm.rotation.x = -0.08 + Math.sin(phase * Math.PI * 2) * 0.16
-      racket.rotation.z = -0.52 + swing * (1.18 + powerFactor * 0.62)
-      racket.rotation.y = 0.28 - swing * 0.42
-      trail.material.opacity = 0.1 + swing * 0.28
-      impactLight.intensity = snap * 3.4
+      arm.rotation.y = -0.42 + swing * (0.32 + powerFactor * 0.34) + gy * 0.36
+      arm.rotation.x = -0.08 + Math.sin(phase * Math.PI * 2) * 0.12 + gx * 0.2
+      racket.rotation.z = -0.52 + swing * (0.86 + powerFactor * 0.48) + gz * 0.72
+      racket.rotation.y = 0.24 - swing * 0.34 + gy * 0.24
+      trail.material.opacity = 0.08 + accelFactor * 0.34
+      impactLight.intensity = snap * 3.8
       shuttle.scale.setScalar(1 + snap * 1.8)
       shuttle.material.color.setHex(snap > 0.2 ? 0x24eca4 : 0x5fe5ff)
 
@@ -1189,7 +1247,7 @@ function SwingSimulationPanel({ player, shots }) {
         materials.forEach((material) => material?.dispose())
       })
     }
-  }, [activeShot, metrics.power])
+  }, [activeShot, imuSamples, imuSummary, metrics.accelPeak, metrics.gyroPeak, metrics.power])
 
   return (
     <section className="simulationPanel" aria-label="3D swing simulation">
@@ -1197,11 +1255,11 @@ function SwingSimulationPanel({ player, shots }) {
         <div>
           <span>3D Replay</span>
           <h2>First-person Swing Simulation</h2>
-          <p>Click a shot row to replay an estimated racket motion from the sensor pattern.</p>
+          <p>Using real IMU data from sweet_spot_0001_20260527_103446_imu.csv. Click a shot row to replay the same captured sensor motion.</p>
         </div>
         <div className="simulationPlayer">
           <b>{player.name}</b>
-          <span>{player.level} · baseline {player.baseline}/100</span>
+          <span>{metrics.source} · {metrics.samples || 0} samples</span>
         </div>
       </div>
 
@@ -1256,10 +1314,10 @@ function SwingSimulationPanel({ player, shots }) {
   )
 }
 
-function OverviewPage({ categories, onCategoryClick, player, data }) {
+function OverviewPage({ categories, onCategoryClick, player, data, imuSamples }) {
   return (
     <>
-      <SwingSimulationPanel player={player} shots={data.recentShots} />
+      <SwingSimulationPanel player={player} shots={data.recentShots} imuSamples={imuSamples} />
       <section className="categoryGrid" aria-label="Dashboard categories">
         {categories.map((item) => (
           <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
@@ -1503,7 +1561,7 @@ export default function App() {
             onSelectPlayer={handleSelectPlayer}
           />
           {activePage === 'overview' ? (
-            <OverviewPage categories={categories} onCategoryClick={setSelectedId} player={selectedPlayer} data={currentData} />
+            <OverviewPage categories={categories} onCategoryClick={setSelectedId} player={selectedPlayer} data={currentData} imuSamples={realImuSamples} />
           ) : (
             <MockupPage page={currentMockup} onVisualizationOpen={setSelectedVisualizationId} />
           )}
