@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import sweetSpotImuCsv from '../sweet_spot_0001_20260527_103446_imu.csv?raw'
 import {
@@ -1096,9 +1096,18 @@ function getShotSimulationMetrics(shot, imuSummary) {
 function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
   const mountRef = useRef(null)
   const selectedShot = shots[0] || recentShots[0]
-  const [selectedShotId, setSelectedShotId] = useState(selectedShot[0])
-  const activeShot = shots.find(([id]) => id === selectedShotId) || selectedShot
-  const imuSummary = getImuSummary(imuSamples)
+  const activeShot = selectedShot
+  const [selectedSampleStart, setSelectedSampleStart] = useState(0)
+  const [frameInfo, setFrameInfo] = useState(null)
+  const activeSamples = imuSamples
+  const sampleRows = useMemo(() => activeSamples.map((sample, index) => ({
+    index,
+    sampleNo: index + 1,
+    time: Math.round(sample.pc_elapsed_ms - activeSamples[0].pc_elapsed_ms),
+    accel: sample.accel_mag_g.toFixed(2),
+    gyro: Math.round(sample.gyro_mag_dps),
+  })), [activeSamples])
+  const imuSummary = getImuSummary(activeSamples)
   const metrics = getShotSimulationMetrics(activeShot, imuSummary)
 
   useEffect(() => {
@@ -1196,6 +1205,7 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
 
     const clock = new THREE.Clock()
     let animationFrame = 0
+    let lastUiUpdateTime = -1
     const resizeObserver = new ResizeObserver(() => {
       const width = mount.clientWidth
       const height = mount.clientHeight
@@ -1210,9 +1220,10 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
       const elapsed = clock.getElapsedTime()
       const phase = (elapsed % 2.8) / 2.8
       const swing = Math.sin(phase * Math.PI)
-      const sampleIndex = imuSamples.length ? Math.min(imuSamples.length - 1, Math.floor(phase * imuSamples.length)) : 0
-      const sample = imuSamples[sampleIndex]
-      const impactPhase = imuSummary ? imuSummary.peakGyroIndex / Math.max(imuSamples.length - 1, 1) : 0.64
+      const sampleIndex = activeSamples.length ? (selectedSampleStart + Math.floor(phase * activeSamples.length)) % activeSamples.length : 0
+      const sample = activeSamples[sampleIndex]
+      const impactIndex = imuSummary ? (imuSummary.peakGyroIndex - selectedSampleStart + activeSamples.length) % activeSamples.length : 0
+      const impactPhase = imuSummary ? impactIndex / Math.max(activeSamples.length - 1, 1) : 0.64
       const snap = Math.max(0, 1 - Math.abs(phase - impactPhase) * 14)
       const powerFactor = metrics.power / 100
       const gx = sample ? sample.gx_dps / Math.max(metrics.gyroPeak, 1) : 0
@@ -1228,6 +1239,19 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
       impactLight.intensity = snap * 3.8
       shuttle.scale.setScalar(1 + snap * 1.8)
       shuttle.material.color.setHex(snap > 0.2 ? 0x24eca4 : 0x5fe5ff)
+
+      if (sample && elapsed - lastUiUpdateTime > 0.16) {
+        lastUiUpdateTime = elapsed
+        setFrameInfo({
+          sampleIndex: sampleIndex + 1,
+          timestamp: Math.round(sample.pc_elapsed_ms - activeSamples[0].pc_elapsed_ms),
+          gx: Math.round(sample.gx_dps),
+          gy: Math.round(sample.gy_dps),
+          gz: Math.round(sample.gz_dps),
+          accel: sample.accel_mag_g.toFixed(2),
+          gyro: Math.round(sample.gyro_mag_dps),
+        })
+      }
 
       renderer.render(scene, camera)
       animationFrame = requestAnimationFrame(animate)
@@ -1247,7 +1271,7 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
         materials.forEach((material) => material?.dispose())
       })
     }
-  }, [activeShot, imuSamples, imuSummary, metrics.accelPeak, metrics.gyroPeak, metrics.power])
+  }, [activeSamples, activeShot, imuSummary, metrics.accelPeak, metrics.gyroPeak, metrics.power, selectedSampleStart])
 
   return (
     <section className="simulationPanel" aria-label="3D swing simulation">
@@ -1255,7 +1279,7 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
         <div>
           <span>3D Replay</span>
           <h2>First-person Swing Simulation</h2>
-          <p>Using real IMU data from sweet_spot_0001_20260527_103446_imu.csv. Click a shot row to replay the same captured sensor motion.</p>
+          <p>Using real IMU data from sweet_spot_0001_20260527_103446_imu.csv. Each row below is one sensor sample; click a sample to start replay from that row.</p>
         </div>
         <div className="simulationPlayer">
           <b>{player.name}</b>
@@ -1265,15 +1289,21 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
 
       <div className="simulationBody">
         <div className="simulationRows">
-          {shots.map((shot) => {
-            const [id, type, result, power, time, tone] = shot
+          {sampleRows.map((sample) => {
+            const isCurrent = frameInfo?.sampleIndex === sample.sampleNo
+
             return (
-              <button className={id === selectedShotId ? 'active' : ''} type="button" onClick={() => setSelectedShotId(id)} key={id}>
-                <span>#{id}</span>
-                <b>{type}</b>
-                <em className={tone}>{result}</em>
-                <strong>{power}</strong>
-                <small>{time}</small>
+              <button
+                className={isCurrent || selectedSampleStart === sample.index ? 'active' : ''}
+                type="button"
+                onClick={() => setSelectedSampleStart(sample.index)}
+                key={sample.sampleNo}
+              >
+                <span>row {sample.sampleNo}</span>
+                <b>{sample.time}ms</b>
+                <em className={sample.gyro > 300 ? 'green' : sample.gyro > 120 ? 'cyan' : 'orange'}>gyro {sample.gyro}</em>
+                <strong>{sample.accel}</strong>
+                <small>accel g</small>
               </button>
             )
           })}
@@ -1282,8 +1312,17 @@ function SwingSimulationPanel({ player, shots, imuSamples = [] }) {
         <div className="simulationStage">
           <div className="threeViewport" ref={mountRef} />
           <div className="simulationHud">
-            <span>Selected #{activeShot[0]} · {activeShot[1]}</span>
-            <b>{activeShot[2]}</b>
+            <span>CSV row / IMU sample</span>
+            <b>{frameInfo ? `row ${frameInfo.sampleIndex}` : 'loading sample'}</b>
+            <small>Replay start row {selectedSampleStart + 1} · {activeSamples.length} samples total</small>
+            <dl>
+              <div><dt>t</dt><dd>{frameInfo?.timestamp ?? 0}ms</dd></div>
+              <div><dt>gx</dt><dd>{frameInfo?.gx ?? 0}</dd></div>
+              <div><dt>gy</dt><dd>{frameInfo?.gy ?? 0}</dd></div>
+              <div><dt>gz</dt><dd>{frameInfo?.gz ?? 0}</dd></div>
+              <div><dt>accel</dt><dd>{frameInfo?.accel ?? '0.00'}g</dd></div>
+              <div><dt>gyro</dt><dd>{frameInfo?.gyro ?? 0}</dd></div>
+            </dl>
           </div>
         </div>
 
