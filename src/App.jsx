@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react'
-import sweetSpotImuCsv from '../sweet_spot_0001_20260527_103446_imu.csv?raw'
 import {
   Activity,
   BatteryFull,
@@ -25,23 +24,6 @@ import {
 } from 'lucide-react'
 
 const asset = (name) => `/assets/${name}`
-
-function parseImuCsv(csvText) {
-  const [headerLine, ...lines] = csvText.trim().split(/\r?\n/)
-  const headers = headerLine.split(',')
-
-  return lines
-    .filter(Boolean)
-    .map((line) => {
-      const values = line.split(',')
-      return headers.reduce((sample, header, index) => {
-        sample[header] = Number(values[index])
-        return sample
-      }, {})
-    })
-}
-
-const realImuSamples = parseImuCsv(sweetSpotImuCsv)
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -1488,16 +1470,13 @@ function ConsistencyWaveformPanel({ player, imuSamples = [] }) {
   )
 }
 
-function OverviewPage({ categories, onCategoryClick, player, data, imuSamples }) {
+function OverviewPage({ categories, onCategoryClick }) {
   return (
-    <>
-      <ConsistencyWaveformPanel player={player} imuSamples={imuSamples} />
-      <section className="categoryGrid" aria-label="Dashboard categories">
-        {categories.map((item) => (
-          <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
-        ))}
-      </section>
-    </>
+    <section className="categoryGrid" aria-label="Dashboard categories">
+      {categories.map((item) => (
+        <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
+      ))}
+    </section>
   )
 }
 
@@ -1735,7 +1714,7 @@ export default function App() {
             onSelectPlayer={handleSelectPlayer}
           />
           {activePage === 'overview' ? (
-            <OverviewPage categories={categories} onCategoryClick={setSelectedId} player={selectedPlayer} data={currentData} imuSamples={realImuSamples} />
+            <OverviewPage categories={categories} onCategoryClick={setSelectedId} />
           ) : (
             <MockupPage page={currentMockup} onVisualizationOpen={setSelectedVisualizationId} />
           )}
