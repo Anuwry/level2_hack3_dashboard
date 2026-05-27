@@ -465,7 +465,12 @@ function SweetSpotDetail() {
 function FormAnalysisDetail({ stats = formStats }) {
   return (
     <div className="formAnalysisDetail">
-      <div className="donut" aria-label="Form analysis pie chart" />
+      <div className="donut" aria-label="Form analysis pie chart">
+        <div>
+          <b>{stats.at(-1)?.[2] || 0}</b>
+          <span>Total Shots</span>
+        </div>
+      </div>
       <div className="formStatList">
         {stats.map(([label, note, value, tone]) => (
           <div className={`formStat ${tone}`} key={label}>
