@@ -1037,17 +1037,13 @@ button {
 }
 
 .donut::before {
-  position: absolute;
-  width: 130px;
-  height: 130px;
-  content: "";
-  border-radius: 50%;
-  background: #0c1924;
+  display: none;
 }
 
 .donut div {
   position: relative;
   text-align: center;
+  text-shadow: 0 2px 10px rgba(4, 14, 22, 0.8);
 }
 
 .donut b,
