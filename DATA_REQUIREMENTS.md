@@ -43,7 +43,7 @@
 | `shot_index` | number | yes | `40` | ลำดับ shot |
 | `timestamp` | ISO datetime | yes | `2026-05-26T18:18:36+07:00` | เวลาที่ตี |
 | `shot_type` | string | yes | `Smash`, `Clear`, `Drop`, `Drive` | ประเภทลูก |
-| `result_label` | string | yes | `Sweet Spot`, `Timing`, `Good` | label สรุป |
+| `result_label` | string | yes | `Sweet Spot`, `Frame Hit` | impact label สรุป ใช้ได้แค่ 2 ค่า |
 | `power_score` | number | yes | `92` | 0-100 |
 | `timing_score` | number | yes | `68` | 0-100 |
 | `sweet_spot_score` | number | yes | `98` | 0-100 |
@@ -97,6 +97,7 @@
 | `sweet_spot_center_y_percent` | number | yes | `31` | จุดกลาง sweet spot |
 | `distance_from_center` | number | yes | `0.08` | normalized 0-1 |
 | `impact_score` | number | yes | `98` | 0-100 |
+| `impact_label` | string | yes | `Sweet Spot` | `Sweet Spot` หรือ `Frame Hit` เท่านั้น |
 | `racket_face_confidence` | number | yes | `0.87` | 0-1 |
 
 หมายเหตุ: ถ้า UI ต้องการแสดงแค่จุดเดียว ให้ใช้ `impact_x_percent`, `impact_y_percent` เท่านั้น
@@ -245,4 +246,3 @@ Backend ควรส่งค่ารวมมาให้ dashboard โดย�
 - ถ้า `connected = false` ควรมี `last_seen_at`
 - ถ้าไม่มี video/pose ให้ส่ง `form_status = "unknown"` แทนการเดาค่า
 - เวลาทุก field ควรใช้ ISO datetime พร้อม timezone
-

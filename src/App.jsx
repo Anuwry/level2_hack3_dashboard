@@ -68,8 +68,8 @@ const summaryItems = [
 
 const recentShots = [
   ['40', 'Smash', 'Sweet Spot', '92', '01:18', 'green'],
-  ['39', 'Clear', 'Timing', '78', '01:16', 'cyan'],
-  ['38', 'Drop', 'Timing', '65', '01:14', 'cyan'],
+  ['39', 'Clear', 'Frame Hit', '78', '01:16', 'orange'],
+  ['38', 'Drop', 'Frame Hit', '65', '01:14', 'orange'],
   ['37', 'Smash', 'Sweet Spot', '95', '01:12', 'green'],
 ]
 
@@ -121,10 +121,10 @@ const playerDatasets = {
       ['Consistency', '54%', '', Gauge],
     ],
     recentShots: [
-      ['32', 'Clear', 'Timing', '62', '01:05', 'orange'],
-      ['31', 'Drop', 'Good', '68', '01:03', 'green'],
-      ['30', 'Clear', 'Late', '56', '01:00', 'orange'],
-      ['29', 'Drive', 'Timing', '59', '00:58', 'cyan'],
+      ['32', 'Clear', 'Frame Hit', '62', '01:05', 'orange'],
+      ['31', 'Drop', 'Sweet Spot', '68', '01:03', 'green'],
+      ['30', 'Clear', 'Frame Hit', '56', '01:00', 'orange'],
+      ['29', 'Drive', 'Frame Hit', '59', '00:58', 'orange'],
     ],
     advice: {
       title: 'Keep the swing compact before adding power.',
@@ -159,9 +159,9 @@ const playerDatasets = {
     ],
     recentShots: [
       ['56', 'Smash', 'Sweet Spot', '96', '01:42', 'green'],
-      ['55', 'Drive', 'Good', '84', '01:40', 'cyan'],
+      ['55', 'Drive', 'Frame Hit', '84', '01:40', 'orange'],
       ['54', 'Smash', 'Sweet Spot', '99', '01:38', 'green'],
-      ['53', 'Drop', 'Good', '79', '01:35', 'green'],
+      ['53', 'Drop', 'Sweet Spot', '79', '01:35', 'green'],
     ],
     advice: {
       title: 'Reduce overload during long smash blocks.',
@@ -178,10 +178,10 @@ const visualizationSets = {
     fileName: 'shot-list.csv',
     rows: [
       { label: '#40 Smash', value: 92, secondary: 'Sweet Spot' },
-      { label: '#39 Clear', value: 78, secondary: 'Timing' },
-      { label: '#38 Drop', value: 65, secondary: 'Timing' },
+      { label: '#39 Clear', value: 78, secondary: 'Frame Hit' },
+      { label: '#38 Drop', value: 65, secondary: 'Frame Hit' },
       { label: '#37 Smash', value: 95, secondary: 'Sweet Spot' },
-      { label: '#36 Drive', value: 70, secondary: 'Good' },
+      { label: '#36 Drive', value: 70, secondary: 'Frame Hit' },
     ],
   },
   sessionHistory: {
@@ -249,10 +249,10 @@ const recordLists = {
     visualizationId: 'shotList',
     rows: [
       ['#40', 'Smash', 'Sweet Spot', 'Power 92', '01:18'],
-      ['#39', 'Clear', 'Timing', 'Power 78', '01:16'],
-      ['#38', 'Drop', 'Timing', 'Power 65', '01:14'],
+      ['#39', 'Clear', 'Frame Hit', 'Power 78', '01:16'],
+      ['#38', 'Drop', 'Frame Hit', 'Power 65', '01:14'],
       ['#37', 'Smash', 'Sweet Spot', 'Power 95', '01:12'],
-      ['#36', 'Drive', 'Good', 'Power 70', '01:10'],
+      ['#36', 'Drive', 'Frame Hit', 'Power 70', '01:10'],
     ],
   },
   sessions: {
@@ -294,7 +294,7 @@ const recordLists = {
     visualizationId: 'trendCharts',
     rows: [
       ['Shot', '#40 Smash', 'Sweet Spot', 'Power 92', '01:18'],
-      ['Shot', '#39 Clear', 'Timing', 'Power 78', '01:16'],
+      ['Shot', '#39 Clear', 'Frame Hit', 'Power 78', '01:16'],
       ['Session', 'May 26', '40 shots', 'Overall 88', '18m 36s'],
       ['Device', 'Core Sensor', 'Connected', 'Battery 100%', 'Seen now'],
       ['Player', 'Player 01', 'Intermediate', 'Overall 82', 'Active'],
@@ -700,7 +700,7 @@ const pageMockups = {
     sections: [
       {
         title: 'Shot List',
-        items: ['#40 Smash - Sweet Spot', '#39 Clear - Timing', '#38 Drop - Timing', '#37 Smash - Sweet Spot'],
+        items: ['#40 Smash - Sweet Spot', '#39 Clear - Frame Hit', '#38 Drop - Frame Hit', '#37 Smash - Sweet Spot'],
       },
       {
         title: 'Analysis Panels',
@@ -891,7 +891,7 @@ function createVisualizationSets(player, data) {
       description: 'Latest feedback signals from the current training session.',
       fileName: `${player.id}-live-feedback.csv`,
       rows: [
-        { label: 'Impact', value: Number(sweetSpotScore), secondary: data.recentShots[0]?.[2] || 'Good' },
+        { label: 'Impact', value: Number(sweetSpotScore), secondary: data.recentShots[0]?.[2] || 'Frame Hit' },
         { label: 'Timing', value: Number(timingScore), secondary: data.scores[1]?.note || '' },
         { label: 'Power', value: getShotScore(data.recentShots), secondary: data.recentShots[0]?.[1] || 'Shot' },
         { label: 'Elbow Form', value: Math.max(100 - Number(data.formStats[0]?.[2] || 0) * 4, 35), secondary: data.formStats[0]?.[2] || '0' },
@@ -952,7 +952,7 @@ function createPageMockups(player, data) {
   const lists = createRecordLists(player, data)
   const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
   const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')?.[1] || 'Best shot'
-  const latestShot = data.recentShots[0] || ['0', 'Shot', 'Good', '0', '00:00']
+  const latestShot = data.recentShots[0] || ['0', 'Shot', 'Frame Hit', '0', '00:00']
 
   return {
     ...pageMockups,
