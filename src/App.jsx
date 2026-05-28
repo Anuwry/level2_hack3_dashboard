@@ -28,6 +28,145 @@ import { swingIntensityRows } from './swingIntensityData.js'
 
 const asset = (name) => `/assets/${name}`
 
+const overviewSystemPrompt = `คุณคือผู้เชี่ยวชาญวิเคราะห์การตีแบดมินตันจากข้อมูลเซนเซอร์ ให้ Feedback สั้น กระชับ เข้าใจง่าย ทั้งภาษาไทยและอังกฤษ
+
+## เกณฑ์การประเมิน
+
+### 1. มุมองศา GYRO
+- ✅ ดี: 80°–120° → ฟอร์มสวิงถูกต้อง
+- ⚠️ ต่ำกว่า 80°: สวิงสั้นเกินไป ควรเพิ่มช่วงสวิง
+- ⚠️ สูงกว่า 120°: สวิงมากเกินไป ควรควบคุมแรง
+
+### 2. จุดกระทบลูก (Hit Spot)
+- ✅ Sweet Spot: ลูกออกเร็ว แม่นยำ พลังงานถ่ายโอนสูงสุด ลดการบาดเจ็บ
+- 🔶 Off Spot: ลูกไม่เที่ยงตรง แรงลดลงครึ่งหนึ่ง ต้องใช้แรงเพิ่มขึ้น
+- ❌ Frame Hit: ตีโดนขอบไม้ ลูกไม่แม่น มีโอกาสเสียแต้ม ต้องปรับท่าตี
+
+### 3. ความเร็วลูก (Shuttlecock Speed)
+- ✅ สูง (≥100 km/h): ถ่ายโอนพลังงานดีเยี่ยม
+- 🔶 ปานกลาง (60–99 km/h): พลังปานกลาง
+- ❌ ต่ำ (<60 km/h): ควรเพิ่มพลังการตี
+
+### 4. ความแน่นการจับกริป (Grip Intensity)
+- ✅ สูง (≥65%): จับแน่น ควบคุมได้ดี มีพลัง
+- 🔶 ปานกลาง (40–64%): อาจเสียการควบคุม
+- ❌ ต่ำ (<40%): จับหลวมเกิน ลูกอาจหลุด แรงน้อย
+
+## ตัวอย่าง Feedback (Few-shot Examples)
+
+### ตัวอย่างที่ 1 — ช็อตดีเยี่ยม
+Input:
+- GYRO: 102° | Hit: Sweet Spot | Shuttlecock: 118 km/h | Grip: 80%
+
+Output:
+🏸 ตีได้ สต็อกดี ลูกที่ออกจากไม้แบตมีความเร็วและแม่นยำ
+เนื่องจากตีถูกจุด Sweet Spot หากตีถูกท่าอย่างสม่ำเสมอ
+จะช่วยลดอัตราการบาดเจ็บได้ดี
+[Excellent stroke! High speed and accuracy from Sweet Spot contact.
+Consistent form like this also reduces injury risk.]
+คะแนน: 100/100 ✅
+
+### ตัวอย่างที่ 2 — ช็อตแย่ทุกด้าน
+Input:
+- GYRO: 55° | Hit: Frame Hit | Shuttlecock: 38 km/h | Grip: 28%
+
+Output:
+🏸 ตีโดนขอบไม้ สต็อกไม่ดี ลูกที่ออกไม่มีความแม่นยำ
+มีโอกาสเสียแต้ม ควรปรับท่าตีและจับกริปให้แน่นขึ้น
+[Frame Hit detected. Poor stroke quality — inaccurate shuttlecock,
+high chance of losing the point. Adjust swing form and grip pressure.]
+คะแนน: 0/100 ❌
+
+### ตัวอย่างที่ 3 — ช็อตปานกลาง
+Input:
+- GYRO: 95° | Hit: Off Spot | Shuttlecock: 65 km/h | Grip: 70%
+
+Output:
+🏸 ตีไม่โดน Sweet Spot ลูกไม่เที่ยงตรง แรงลดลงครึ่งหนึ่ง
+และต้องใช้แรงเพิ่มขึ้น ฟอร์มการสวิงและกริปดี แต่ควรปรับ
+จุดกระทบให้ตรง Sweet Spot มากขึ้น
+[Off Spot contact — reduced power and accuracy. Swing angle and
+grip are good. Focus on hitting the Sweet Spot consistently.]
+คะแนน: 50/100 🔶
+
+## รูปแบบการตอบ
+1. สรุป Hit Spot และ GYRO ก่อน
+2. ระบุ Shuttlecock Speed และ Grip
+3. ให้คำแนะนำ 1–2 ประโยค
+4. แสดงคะแนน X/100
+5. ตอบทั้งภาษาไทยและอังกฤษ`
+
+const overviewPromptText = `คุณคือผู้เชี่ยวชาญวิเคราะห์การตีแบดมินตันจากข้อมูลเซนเซอร์ ให้ Feedback สั้น กระชับ เข้าใจง่าย ทั้งภาษาไทยและอังกฤษ
+
+## เกณฑ์การประเมิน
+
+### 1. มุมองศา GYRO
+- ดี: 80°–120° -> ฟอร์มสวิงถูกต้อง
+- ต่ำกว่า 80°: สวิงสั้นเกินไป ควรเพิ่มช่วงสวิง
+- สูงกว่า 120°: สวิงมากเกินไป ควรควบคุมแรง
+
+### 2. จุดกระทบลูก (Hit Spot)
+- Sweet Spot: ลูกออกเร็ว แม่นยำ พลังงานถ่ายโอนสูงสุด ลดการบาดเจ็บ
+- Off Spot: ลูกไม่เที่ยงตรง แรงลดลงครึ่งหนึ่ง ต้องใช้แรงเพิ่มขึ้น
+- Frame Hit: ตีโดนขอบไม้ ลูกไม่แม่น มีโอกาสเสียแต้ม ต้องปรับท่าตี
+
+### 3. ความเร็วลูก (Shuttlecock Speed)
+- สูง (>=100 km/h): ถ่ายโอนพลังงานดีเยี่ยม
+- ปานกลาง (60-99 km/h): พลังปานกลาง
+- ต่ำ (<60 km/h): ควรเพิ่มพลังการตี
+
+### 4. ความแน่นการจับกริป (Grip Intensity)
+- สูง (>=65%): จับแน่น ควบคุมได้ดี มีพลัง
+- ปานกลาง (40-64%): อาจเสียการควบคุม
+- ต่ำ (<40%): จับหลวมเกิน ลูกอาจหลุด แรงน้อย
+
+## ตัวอย่าง Feedback (Few-shot Examples)
+
+### ตัวอย่างที่ 1 - ช็อตดีเยี่ยม
+Input:
+- GYRO: 102° | Hit: Sweet Spot | Shuttlecock: 118 km/h | Grip: 80%
+
+Output:
+ตีได้สโตรกดี ลูกที่ออกจากไม้แบตมีความเร็วและแม่นยำ
+เนื่องจากตีถูกจุด Sweet Spot หากตีถูกท่าอย่างสม่ำเสมอ
+จะช่วยลดอัตราการบาดเจ็บได้ดี
+[Excellent stroke! High speed and accuracy from Sweet Spot contact.
+Consistent form like this also reduces injury risk.]
+คะแนน: 100/100
+
+### ตัวอย่างที่ 2 - ช็อตแย่ทุกด้าน
+Input:
+- GYRO: 55° | Hit: Frame Hit | Shuttlecock: 38 km/h | Grip: 28%
+
+Output:
+ตีโดนขอบไม้ สโตรกไม่ดี ลูกที่ออกไม่มีความแม่นยำ
+มีโอกาสเสียแต้ม ควรปรับท่าตีและจับกริปให้แน่นขึ้น
+[Frame Hit detected. Poor stroke quality - inaccurate shuttlecock,
+high chance of losing the point. Adjust swing form and grip pressure.]
+คะแนน: 0/100
+
+### ตัวอย่างที่ 3 - ช็อตปานกลาง
+Input:
+- GYRO: 95° | Hit: Off Spot | Shuttlecock: 65 km/h | Grip: 70%
+
+Output:
+ตีไม่โดน Sweet Spot ลูกไม่เที่ยงตรง แรงลดลงครึ่งหนึ่ง
+และต้องใช้แรงเพิ่มขึ้น ฟอร์มการสวิงและกริปดี แต่ควรปรับ
+จุดกระทบให้ตรง Sweet Spot มากขึ้น
+[Off Spot contact - reduced power and accuracy. Swing angle and
+grip are good. Focus on hitting the Sweet Spot consistently.]
+คะแนน: 50/100
+
+## รูปแบบการตอบ
+1. สรุป Hit Spot และ GYRO ก่อน
+2. ระบุ Shuttlecock Speed และ Grip
+3. ให้คำแนะนำ 1-2 ประโยค
+4. แสดงคะแนน X/100
+5. ตอบทั้งภาษาไทยและอังกฤษ`
+
+const GEMINI_FLASH_MODEL = 'gemini-2.5-flash'
+const HIDDEN_OVERVIEW_CATEGORIES = new Set(['hardware', 'actions'])
+
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
   { id: 'training', label: 'Training', icon: Dumbbell },
@@ -541,7 +680,6 @@ function SessionDetail({ items = summaryItems }) {
           </div>
         ))}
       </div>
-      <button className="reportButton" type="button">ดูรายงานฉบับเต็ม</button>
     </div>
   )
 }
@@ -2021,11 +2159,18 @@ function ConsistencyWaveformPanel({ player, imuSamples = [] }) {
   )
 }
 
-function OverviewPage({ categories, onCategoryClick, onSummaryClick }) {
+function OverviewPage({
+  categories,
+  geminiState,
+  isGeminiConnecting,
+  onCategoryClick,
+  onGeminiConnect,
+  onSummaryClick,
+}) {
   return (
     <section className="overviewPage" aria-label="Dashboard overview">
       <div className="summaryEntry">
-        <div>
+        <div className="summaryEntryContent">
           <h2>Session snapshot</h2>
           <p>Scores, shots, advice, IMU and speed graph in one view.</p>
         </div>
@@ -2034,6 +2179,31 @@ function OverviewPage({ categories, onCategoryClick, onSummaryClick }) {
           Summary
         </button>
       </div>
+
+      <section className="overviewPanel" aria-label="Gemini system prompt">
+        <div className="overviewPanelHeader">
+          <div>
+            <h3>Gemini system prompt</h3>
+            <p>Overview prompt and connection status for Gemini Flash.</p>
+          </div>
+          <button type="button" onClick={onGeminiConnect} disabled={isGeminiConnecting}>
+            <Sparkles size={18} />
+            {isGeminiConnecting ? 'Connecting...' : 'Connect Gemini Flash'}
+          </button>
+        </div>
+        <div className="geminiStatusRow" aria-live="polite">
+          <span className={`geminiStatusDot ${geminiState.tone}`} />
+          <b>{geminiState.label}</b>
+          <small>{geminiState.message}</small>
+        </div>
+        {geminiState.reply && (
+          <div className="geminiReply">
+            <span>Latest reply</span>
+            <p>{geminiState.reply}</p>
+          </div>
+        )}
+        <pre className="systemPromptBlock">{overviewPromptText}</pre>
+      </section>
 
       <div className="categoryGrid" aria-label="Dashboard categories">
         {categories.map((item) => (
@@ -2248,9 +2418,20 @@ export default function App() {
   const [isPlayerMenuOpen, setIsPlayerMenuOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [selectedVisualizationId, setSelectedVisualizationId] = useState(null)
+  const [isGeminiConnecting, setIsGeminiConnecting] = useState(false)
+  const [geminiState, setGeminiState] = useState({
+    tone: 'idle',
+    label: 'Ready',
+    message: 'No Gemini connection yet.',
+    reply: '',
+  })
   const selectedPlayer = players.find((player) => player.id === selectedPlayerId) || players[0]
   const currentData = playerDatasets[selectedPlayer.id] || playerDatasets.player1
   const categories = getCategories(currentData)
+  const overviewCategories = useMemo(
+    () => categories.filter((item) => !HIDDEN_OVERVIEW_CATEGORIES.has(item.id)),
+    [categories],
+  )
   const summaryCategory = {
     id: 'summary',
     kicker: 'Summary',
@@ -2280,6 +2461,51 @@ export default function App() {
       setSelectedId(id)
     }
   }
+  const handleGeminiConnect = async () => {
+    setIsGeminiConnecting(true)
+    setGeminiState({
+      tone: 'pending',
+      label: 'Connecting',
+      message: `Checking ${GEMINI_FLASH_MODEL} on the Vercel API route.`,
+      reply: '',
+    })
+
+    try {
+      const response = await fetch('/api/gemini-connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: GEMINI_FLASH_MODEL,
+          player: selectedPlayer.name,
+          summary: currentData.summaryItems.map(([label, value, note]) => ({ label, value, note })),
+          systemPrompt: overviewPromptText,
+        }),
+      })
+      const payload = await response.json()
+
+      if (!response.ok || !payload?.ok) {
+        throw new Error(payload?.error || 'Gemini connection failed.')
+      }
+
+      setGeminiState({
+        tone: 'success',
+        label: 'Connected',
+        message: payload.model || GEMINI_FLASH_MODEL,
+        reply: payload.reply || '',
+      })
+    } catch (error) {
+      setGeminiState({
+        tone: 'error',
+        label: 'Connection failed',
+        message: error instanceof Error ? error.message : 'Gemini connection failed.',
+        reply: '',
+      })
+    } finally {
+      setIsGeminiConnecting(false)
+    }
+  }
 
   return (
     <div className={`appShell ${hasOverlay ? 'isBlurred' : ''}`}>
@@ -2296,8 +2522,11 @@ export default function App() {
           />
           {activePage === 'overview' ? (
             <OverviewPage
-              categories={categories}
+              categories={overviewCategories}
+              geminiState={geminiState}
+              isGeminiConnecting={isGeminiConnecting}
               onCategoryClick={handleCategoryClick}
+              onGeminiConnect={handleGeminiConnect}
               onSummaryClick={() => setSelectedId('summary')}
             />
           ) : activePage === 'training-form' ? (
