@@ -2180,15 +2180,15 @@ function OverviewPage({
         </button>
       </div>
 
-      <section className="overviewPanel" aria-label="Gemini system prompt">
+      <section className="overviewPanel" aria-label="Gemini session analysis">
         <div className="overviewPanelHeader">
           <div>
-            <h3>Gemini system prompt</h3>
-            <p>Overview prompt and connection status for Gemini Flash.</p>
+            <h3>Gemini analysis</h3>
+            <p>Analyze the current session with Gemini Flash.</p>
           </div>
           <button type="button" onClick={onGeminiConnect} disabled={isGeminiConnecting}>
             <Sparkles size={18} />
-            {isGeminiConnecting ? 'Connecting...' : 'Connect Gemini Flash'}
+            {isGeminiConnecting ? 'Analyzing...' : 'Analyze with Gemini'}
           </button>
         </div>
         <div className="geminiStatusRow" aria-live="polite">
@@ -2198,11 +2198,10 @@ function OverviewPage({
         </div>
         {geminiState.reply && (
           <div className="geminiReply">
-            <span>Latest reply</span>
+            <span>Session analysis</span>
             <p>{geminiState.reply}</p>
           </div>
         )}
-        <pre className="systemPromptBlock">{overviewPromptText}</pre>
       </section>
 
       <div className="categoryGrid" aria-label="Dashboard categories">
@@ -2465,8 +2464,8 @@ export default function App() {
     setIsGeminiConnecting(true)
     setGeminiState({
       tone: 'pending',
-      label: 'Connecting',
-      message: `Checking ${GEMINI_FLASH_MODEL} on the Vercel API route.`,
+      label: 'Analyzing',
+      message: `Sending current session data to ${GEMINI_FLASH_MODEL}.`,
       reply: '',
     })
 
@@ -2479,7 +2478,35 @@ export default function App() {
         body: JSON.stringify({
           model: GEMINI_FLASH_MODEL,
           player: selectedPlayer.name,
-          summary: currentData.summaryItems.map(([label, value, note]) => ({ label, value, note })),
+          session: {
+            timer: currentData.timer,
+            drill: currentData.drill,
+            targetShots: currentData.targetShots,
+            bestDate: currentData.bestDate,
+            scores: currentData.scores.map(({ label, value, note }) => ({ label, value, note })),
+            formStats: currentData.formStats.map(([label, note, value, tone]) => ({ label, note, value, tone })),
+            summary: currentData.summaryItems.map(([label, value, note]) => ({ label, value, note })),
+            recentShots: currentData.recentShots.map(([id, shot, result, power, time]) => ({
+              id,
+              shot,
+              result,
+              power,
+              time,
+            })),
+            coachAdvice: currentData.advice,
+            swingIntensity: swingIntensityRows.slice(0, 12).map((row) => ({
+              id: row.id,
+              category: row.category,
+              shotNo: row.shotNo,
+              peakSpeed: row.peakSpeed,
+              avgSpeed: row.avgSpeed,
+              peakGyro: row.peakGyro,
+              peakAccel: row.peakAccel,
+              intensity: row.intensity,
+              level: row.level,
+              impactMs: row.impactMs,
+            })),
+          },
           systemPrompt: overviewPromptText,
         }),
       })

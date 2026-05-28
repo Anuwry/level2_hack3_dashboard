@@ -3559,16 +3559,9 @@ button:focus-visible {
   background: rgba(10, 15, 23, 0.7);
 }
 
-.systemPromptBlock {
-  margin: 0;
-  padding: 16px;
-  overflow-x: auto;
-  color: #d7e1ea;
-  font: 500 12px/1.7 'Inter', 'Segoe UI', sans-serif;
-  white-space: pre-wrap;
-  border: 1px solid rgba(111, 138, 165, 0.14);
-  border-radius: 8px;
-  background: rgba(8, 12, 18, 0.88);
+.geminiReply p {
+  white-space: pre-line;
+  line-height: 1.65;
 }
 
 .sessionSummaryDetail > .reportButton {
