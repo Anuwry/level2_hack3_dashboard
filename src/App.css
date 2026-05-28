@@ -3450,6 +3450,124 @@ button:focus-visible {
   transform: translateY(-1px);
 }
 
+.summaryEntryContent {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.overviewPanel {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid rgba(111, 138, 165, 0.18);
+  border-radius: 10px;
+  background: rgba(16, 23, 32, 0.86);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+}
+
+.overviewPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.overviewPanelHeader h3,
+.geminiReply p {
+  margin: 0;
+}
+
+.overviewPanelHeader h3 {
+  font-size: 18px;
+  font-weight: 760;
+}
+
+.overviewPanelHeader p,
+.geminiReply span {
+  margin: 4px 0 0;
+  color: #aebbc8;
+}
+
+.overviewPanelHeader button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 16px;
+  color: #07110d;
+  font-weight: 800;
+  border: 0;
+  border-radius: 8px;
+  background: #42d392;
+  box-shadow: 0 10px 24px rgba(66, 211, 146, 0.18);
+  cursor: pointer;
+}
+
+.overviewPanelHeader button:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.geminiStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+}
+
+.geminiStatusRow b {
+  font-size: 13px;
+}
+
+.geminiStatusRow small {
+  color: #aebbc8;
+}
+
+.geminiStatusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #64748b;
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.14);
+}
+
+.geminiStatusDot.pending {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.14);
+}
+
+.geminiStatusDot.success {
+  background: #42d392;
+  box-shadow: 0 0 0 4px rgba(66, 211, 146, 0.14);
+}
+
+.geminiStatusDot.error {
+  background: #fb7185;
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14);
+}
+
+.geminiReply {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid rgba(111, 138, 165, 0.14);
+  border-radius: 8px;
+  background: rgba(10, 15, 23, 0.7);
+}
+
+.geminiReply p {
+  white-space: pre-line;
+  line-height: 1.65;
+}
+
+.sessionSummaryDetail > .reportButton {
+  display: none;
+}
+
 .categoryGrid {
   gap: 12px;
 }
