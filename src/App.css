@@ -3337,6 +3337,14 @@ button:focus-visible {
   background: rgba(18, 25, 34, 0.78);
 }
 
+.connectPill {
+  grid-template-columns: 28px auto;
+}
+
+.connectPill svg {
+  grid-row: auto;
+}
+
 .connectPill b,
 .playerPill b,
 .railDevice span,
@@ -3377,7 +3385,7 @@ button:focus-visible {
 
 .railDevice {
   grid-template-columns: 34px 1fr 8px;
-  padding: 9px 0;
+  padding: 11px 0;
 }
 
 .railDevice img {
@@ -3392,7 +3400,7 @@ button:focus-visible {
 }
 
 .summaryEntry {
-  min-height: 126px;
+  min-height: 92px;
   padding: 20px;
   border-color: rgba(66, 211, 146, 0.18);
   border-radius: 10px;
@@ -3447,10 +3455,14 @@ button:focus-visible {
 }
 
 .categoryCard {
-  min-height: 132px;
+  min-height: 104px;
   padding: 14px;
   border-radius: 10px;
   background: rgba(18, 25, 34, 0.78);
+}
+
+.categoryCard b {
+  margin-top: 0;
 }
 
 .categoryCard:hover {

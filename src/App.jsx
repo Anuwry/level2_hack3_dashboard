@@ -330,7 +330,6 @@ function Sidebar({ activePage, onPageChange }) {
             <img src={asset(image)} alt={name} />
             <div>
               <b>{name}</b>
-              <span>Connected</span>
             </div>
             <i />
           </div>
@@ -344,23 +343,15 @@ function Header({ activePage, selectedPlayer, playerOptions, isPlayerMenuOpen, o
   const pageTitle = activePage === 'training-form'
     ? 'Form Training'
     : navItems.find((item) => item.id === activePage)?.label || 'Overview'
-  const pageSubtitle = activePage === 'overview'
-    ? 'Choose a category to inspect the training data.'
-    : activePage === 'training-form'
-      ? 'Set up your profile and choose a stroke to practice.'
-      : 'Mock-up layout for this section of the dashboard.'
 
   return (
     <header className="header">
       <div>
-        <p>Live Training Session</p>
         <h1>{pageTitle === 'Overview' ? 'Badminton AI Coach' : pageTitle}</h1>
-        <span>{pageSubtitle}</span>
       </div>
       <div className="headerStatus">
         <div className="connectPill">
           <BluetoothConnected size={24} />
-          <span>Bluetooth 5.2</span>
           <b>Connected</b>
         </div>
         <div className="playerSwitcher">
@@ -396,9 +387,7 @@ function CategoryCard({ item, onClick }) {
     <button className="categoryCard" type="button" onClick={onClick}>
       <div className="categoryIcon"><Icon size={24} /></div>
       <div>
-        <span>{item.kicker}</span>
         <b>{item.title}</b>
-        <p>{item.description}</p>
       </div>
     </button>
   )
@@ -2036,9 +2025,7 @@ function OverviewPage({ categories, onCategoryClick, onSummaryClick }) {
     <section className="overviewPage" aria-label="Dashboard overview">
       <div className="summaryEntry">
         <div>
-          <span>Overview Summary</span>
           <h2>Session snapshot</h2>
-          <p>Open one view with training scores, latest shots, coach advice, IMU swing intensity rows, and the speed graph.</p>
         </div>
         <button type="button" onClick={onSummaryClick}>
           <ChartNoAxesCombined size={18} />
