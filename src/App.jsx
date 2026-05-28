@@ -165,7 +165,7 @@ grip are good. Focus on hitting the Sweet Spot consistently.]
 5. ตอบทั้งภาษาไทยและอังกฤษ`
 
 const GEMINI_FLASH_MODEL = 'gemini-2.5-flash'
-const HIDDEN_OVERVIEW_CATEGORIES = new Set(['hardware', 'actions'])
+const HIDDEN_OVERVIEW_CATEGORIES = new Set(['hardware', 'actions', 'coach'])
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -179,10 +179,8 @@ const navItems = [
 ]
 
 const devices = [
-  ['Core Sensor', 'core-sensor.png'],
-  ['Wrist Band', 'wrist-band.png'],
-  ['AI Coach Hub', 'ai-coach-hub.png'],
-  ['Sensor Pod', 'sensor-pod.png'],
+  ['Arduino Q WebSocket receiver', 'ai-coach-hub.png'],
+  ['Nano 33 BLE Sense IMU CSV', 'core-sensor.png'],
 ]
 
 const scores = [
@@ -313,6 +311,88 @@ const playerDatasets = {
   },
 }
 
+const clampScore = (value) => Math.max(0, Math.min(100, Math.round(value)))
+
+const realCategoryLabel = (category = '') => category
+  .split('_')
+  .filter(Boolean)
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join(' ')
+
+const countRealCategories = (rows) => rows.reduce((counts, row) => {
+  counts[row.category] = (counts[row.category] || 0) + 1
+  return counts
+}, {})
+
+function createRealSessionDataset(rows) {
+  const totalShots = rows.length
+  const counts = countRealCategories(rows)
+  const sweetSpotCount = counts.sweet_spot || 0
+  const offSweetSpotCount = counts.off_sweet_spot || 0
+  const frameHitCount = counts.frame_hit || 0
+  const avgIntensity = totalShots ? rows.reduce((sum, row) => sum + row.intensity, 0) / totalShots : 0
+  const avgPeakGyro = totalShots ? rows.reduce((sum, row) => sum + row.peakGyro, 0) / totalShots : 0
+  const sweetSpotScore = totalShots ? (sweetSpotCount / totalShots) * 100 : 0
+  const consistency = totalShots ? ((sweetSpotCount + offSweetSpotCount * 0.5) / totalShots) * 100 : 0
+  const bestRow = rows.reduce((best, row) => (row.peakSpeed > best.peakSpeed ? row : best), rows[0] || { peakSpeed: 0, category: 'unknown', shotNo: '0' })
+  const maxDurationMs = rows.reduce((max, row) => Math.max(max, row.durationMs || 0), 0)
+  const recentShots = rows.slice(-5).reverse().map((row) => [
+    row.shotNo,
+    realCategoryLabel(row.category),
+    realCategoryLabel(row.category),
+    String(row.intensity),
+    `${(row.durationMs / 1000).toFixed(2)}s`,
+    row.tone,
+  ])
+
+  return {
+    timer: maxDurationMs ? `00:00:${String(Math.round(maxDurationMs / 1000)).padStart(2, '0')}` : '00:00:00',
+    drill: 'Recorded IMU dataset',
+    targetShots: totalShots,
+    bestDate: '2026-05-27',
+    scores: [
+      { label: 'Power', value: clampScore(avgIntensity), icon: Zap, tone: avgIntensity >= 70 ? 'green' : avgIntensity >= 40 ? 'cyan' : 'orange', note: `Avg IMU intensity ${avgIntensity.toFixed(1)}/100` },
+      { label: 'Timing', value: 'n/a', icon: Clock3, tone: 'orange', note: 'No real timing labels in current data.' },
+      { label: 'Sweet Spot', value: clampScore(sweetSpotScore), icon: Target, tone: sweetSpotScore >= 70 ? 'green' : sweetSpotScore >= 40 ? 'cyan' : 'orange', note: `${sweetSpotCount}/${totalShots} recorded sweet spot rows` },
+      { label: 'Injury Risk', value: 'n/a', icon: ShieldAlert, tone: 'orange', note: 'No elbow or pose risk data in current feed.' },
+    ],
+    formStats: [
+      ['Sweet Spot Rows', 'From real IMU filename labels', String(sweetSpotCount), 'green'],
+      ['Off Sweet Spot Rows', 'From real IMU filename labels', String(offSweetSpotCount), 'orange'],
+      ['Frame Hit Rows', 'From real IMU filename labels', String(frameHitCount), 'red'],
+      ['Total IMU Rows', 'CSV files converted into dashboard rows', String(totalShots), 'cyan'],
+    ],
+    summaryItems: [
+      ['Total Shots', String(totalShots), 'Real IMU CSV recordings', Target],
+      ['Best Swing', `${realCategoryLabel(bestRow.category)} #${bestRow.shotNo}`, 'Real IMU label', Medal],
+      ['Avg Intensity', `${avgIntensity.toFixed(1)}`, 'from swingIntensityRows', Zap],
+      ['Peak Speed', 'n/a', 'No measured swing speed field', Activity],
+      ['Avg Peak Gyro', `${Math.round(avgPeakGyro)}`, 'dps', Gauge],
+      ['Consistency', `${clampScore(consistency)}%`, 'based on recorded impact labels', Gauge],
+    ],
+    recentShots,
+    advice: {
+      title: frameHitCount > sweetSpotCount ? 'Reduce frame-hit contact first.' : 'Keep collecting sweet-spot labeled swings.',
+      body: `Current dashboard uses ${totalShots} real IMU CSV recordings: ${sweetSpotCount} sweet spot, ${offSweetSpotCount} off sweet spot, ${frameHitCount} frame hit.`,
+      steps: ['Run the WebSocket receiver to append live events to JSONL.', 'Keep raw IMU CSV on Q and sync the session folder.', 'Add real pose/elbow data before showing injury risk.'],
+    },
+  }
+}
+const realSessionDataset = createRealSessionDataset(swingIntensityRows)
+const realPlayers = [
+  {
+    id: 'recorded-session',
+    number: '01',
+    name: 'Recorded Session',
+    level: 'Real IMU data',
+    hand: 'n/a',
+    baseline: clampScore(Number(String(realSessionDataset.summaryItems.find(([label]) => label === 'Consistency')?.[1] || '0').replace('%', ''))),
+  },
+]
+const realPlayerDatasets = {
+  'recorded-session': realSessionDataset,
+}
+
 const visualizationSets = {
   shotList: {
     title: 'Shot List Visualization',
@@ -368,7 +448,7 @@ const visualizationSets = {
       { label: 'Impact', value: 98, secondary: 'Sweet Spot' },
       { label: 'Timing', value: 68, secondary: 'Needs earlier contact' },
       { label: 'Power', value: 92, secondary: 'Strong' },
-      { label: 'Elbow Form', value: 58, secondary: '122 deg' },
+      { label: 'Elbow Form', value: 0, secondary: 'n/a' },
     ],
   },
   playerHistory: {
@@ -461,8 +541,8 @@ function Sidebar({ activePage, onPageChange }) {
 
       <section className="deviceRail" aria-label="Connected devices">
         <div className="railHeader">
-          <h2>Connected Kit</h2>
-          <span><BatteryFull size={14} />100%</span>
+          <h2>Data Sources</h2>
+          <span><BatteryFull size={14} />n/a</span>
         </div>
         {devices.map(([name, image]) => (
           <div className="railDevice" key={name}>
@@ -491,7 +571,7 @@ function Header({ activePage, selectedPlayer, playerOptions, isPlayerMenuOpen, o
       <div className="headerStatus">
         <div className="connectPill">
           <BluetoothConnected size={24} />
-          <b>Connected</b>
+          <b>IMU CSV</b>
         </div>
         <div className="playerSwitcher">
           <button className="playerPill" type="button" onClick={onTogglePlayerMenu} aria-expanded={isPlayerMenuOpen}>
@@ -509,7 +589,7 @@ function Header({ activePage, selectedPlayer, playerOptions, isPlayerMenuOpen, o
                   onClick={() => onSelectPlayer(player.id)}
                 >
                   <strong>{player.name}</strong>
-                  <span>{player.level} · {player.hand} hand · {player.baseline}/100</span>
+                  <span>{player.level} · {player.baseline}/100</span>
                 </button>
               ))}
             </div>
@@ -560,23 +640,23 @@ function ElbowDetail() {
     <div className="detailGrid twoCol">
       <div className="elbowStage">
         <img src={asset('elbows.png')} alt="Elbow form analysis" />
-        <svg className="elbowArc" viewBox="0 0 100 86" aria-hidden="true">
+        <svg className="elbowArc isUnavailable" viewBox="0 0 100 86" aria-hidden="true">
           <path d="M 18 36 C 34 22 61 24 75 46" />
           <path className="inner" d="M 42 37 C 51 43 57 53 59 66" />
           <circle cx="75" cy="46" r="4" />
-          <text x="68" y="31">122°</text>
+          <text x="68" y="31">n/a</text>
         </svg>
       </div>
       <div className="calloutList">
-        <div className="callout danger">
+        <div className="callout muted">
           <span>Current Angle</span>
-          <b>122°</b>
-          <p>Elbow is too open for this shot and may increase injury risk.</p>
+          <b>n/a</b>
+          <p>No real elbow angle or pose data is available in the current feed.</p>
         </div>
-        <div className="callout good">
+        <div className="callout muted">
           <span>Target Range</span>
-          <b>85°-105°</b>
-          <p>Keep the elbow closer to the body before contact.</p>
+          <b>n/a</b>
+          <p>Add real pose or elbow-angle data before showing injury-risk guidance.</p>
         </div>
       </div>
     </div>
@@ -615,7 +695,7 @@ function SweetSpotDetail({ rows = swingIntensityRows }) {
             >
               <span>#{row.shotNo}</span>
               <b>{impactLabelMap[row.category]}</b>
-              <small>{row.peakSpeed} km/h</small>
+              <small>IMU row</small>
             </button>
           ))}
         </div>
@@ -624,14 +704,38 @@ function SweetSpotDetail({ rows = swingIntensityRows }) {
   )
 }
 
-function FormAnalysisDetail({ stats = formStats }) {
+function FormAnalysisDetail({ stats = realSessionDataset.formStats }) {
+  const totalRow = stats.find(([label]) => label.toLowerCase().includes('total'))
+  const graphRows = stats
+    .filter(([label]) => !label.toLowerCase().includes('total'))
+    .map(([label, note, value, tone]) => ({
+      label,
+      note,
+      value: Number(value) || 0,
+      tone,
+    }))
+  const total = Number(totalRow?.[2]) || graphRows.reduce((sum, row) => sum + row.value, 0)
+  const maxValue = Math.max(...graphRows.map((row) => row.value), 1)
+
   return (
     <div className="formAnalysisDetail">
-      <div className="donut" aria-label="Form analysis pie chart">
-        <div>
-          <b>{stats.at(-1)?.[2] || 0}</b>
-          <span>Total Shots</span>
+      <div className="formGraph" aria-label="Form analysis chart">
+        <div className="formGraphHeader">
+          <span>Total IMU Rows</span>
+          <b>{total}</b>
         </div>
+        {graphRows.map((row) => (
+          <div className={`formBar ${row.tone}`} key={row.label}>
+            <div>
+              <span>{row.label}</span>
+              <b>{row.value}</b>
+            </div>
+            <i>
+              <span style={{ width: `${Math.max((row.value / maxValue) * 100, row.value ? 4 : 0)}%` }} />
+            </i>
+            <small>{total ? Math.round((row.value / total) * 100) : 0}% of real rows</small>
+          </div>
+        ))}
       </div>
       <div className="formStatList">
         {stats.map(([label, note, value, tone]) => (
@@ -648,7 +752,7 @@ function FormAnalysisDetail({ stats = formStats }) {
   )
 }
 
-function CoachAdvice({ advice = playerDatasets.player1.advice }) {
+function CoachAdvice({ advice = realSessionDataset.advice }) {
   return (
     <div className="adviceDetail">
       <div className="advicePrimary">
@@ -667,7 +771,7 @@ function CoachAdvice({ advice = playerDatasets.player1.advice }) {
   )
 }
 
-function SessionDetail({ items = summaryItems }) {
+function SessionDetail({ items = realSessionDataset.summaryItems }) {
   return (
     <div className="sessionSummaryDetail">
       <div className="summaryGrid">
@@ -684,7 +788,7 @@ function SessionDetail({ items = summaryItems }) {
   )
 }
 
-function RecentShotsDetail({ shots = recentShots }) {
+function RecentShotsDetail({ shots = realSessionDataset.recentShots }) {
   return (
     <div className="shotList">
       {shots.map(([id, shot, result, power, time, tone]) => (
@@ -706,9 +810,10 @@ function SpeedDetail() {
       <img src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
       <div>
         <span>Max Speed</span>
-        <b>276<small>km/h</small></b>
+        <b>n/a</b>
         <span>Acceleration</span>
-        <b className="greenText">32.6<small>m/s²</small></b>
+        <b className="greenText">n/a</b>
+        <small>No measured swing-speed or shuttle-speed field is available. IMU gyro and acceleration remain in Swing Intensity.</small>
       </div>
     </div>
   )
@@ -971,8 +1076,8 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
       <div className="gyroReplayHud">
         <div><span>Frame</span><b>{frameIndex + 1} / {samples.length}</b></div>
         <div><span>Time</span><b>{((currentSample[0] || 0) / 1000).toFixed(2)}s</b></div>
-        <div><span>Speed</span><b>{currentSpeed.toFixed(1)} km/h</b></div>
-        <div><span>Max</span><b>{row?.peakSpeed || 0} km/h</b></div>
+        <div><span>Speed</span><b>n/a</b></div>
+        <div><span>Peak Gyro</span><b>{row?.peakGyro || 0} dps</b></div>
       </div>
       <div className="gyroReplaySide">
         <span>Live swing intensity</span>
@@ -1004,7 +1109,7 @@ function SwingIntensityDetail({ rows = [] }) {
   const averageIntensity = rows.length
     ? Math.round(rows.reduce((total, row) => total + row.intensity, 0) / rows.length)
     : 0
-  const peakRow = rows.reduce((best, row) => (row.peakSpeed > best.peakSpeed ? row : best), rows[0] || { peakSpeed: 0 })
+  const peakGyroRow = rows.reduce((best, row) => (row.peakGyro > best.peakGyro ? row : best), rows[0] || { peakGyro: 0 })
   const levelCounts = rows.reduce((counts, row) => {
     counts[row.level] = (counts[row.level] || 0) + 1
     return counts
@@ -1032,9 +1137,9 @@ function SwingIntensityDetail({ rows = [] }) {
           <small>relative swing load</small>
         </div>
         <div>
-          <span>Peak Speed</span>
-          <b>{peakRow.peakSpeed}<small>km/h</small></b>
-          <small>{formatCategoryName(peakRow.category || 'unknown')}</small>
+          <span>Peak Gyro</span>
+          <b>{peakGyroRow.peakGyro}<small>dps</small></b>
+          <small>{formatCategoryName(peakGyroRow.category || 'unknown')}</small>
         </div>
         <div>
           <span>Common Level</span>
@@ -1059,7 +1164,7 @@ function SwingIntensityDetail({ rows = [] }) {
                 <b>{formatCategoryName(row.category)}</b>
                 <em className={row.tone}>{row.level}</em>
                 <strong>{row.intensity}</strong>
-                <small>{row.peakSpeed} km/h peak</small>
+                <small>speed n/a</small>
               </button>
             </div>
           ))}
@@ -1088,9 +1193,9 @@ function SwingIntensityDetail({ rows = [] }) {
             </div>
           </div>
 
-          <svg className="speedGraph" viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label="Swing speed graph">
+          <svg className="speedGraph" viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label="IMU intensity trace">
             <text className="speedGraphLabel" x="20" y="25">
-              Speed graph : max {graphMaxSpeed.toFixed(1)} km/h
+              IMU intensity trace : speed n/a
             </text>
             <path className="speedGraphLine" d={graphPath} />
             <line className="speedGraphEndMarker" x1={graphWidth - 13} x2={graphWidth - 13} y1="18" y2={graphHeight - 18} />
@@ -1113,11 +1218,11 @@ function SwingIntensityDetail({ rows = [] }) {
           <div className="intensityMetrics">
             <div>
               <span>Peak Speed</span>
-              <b>{selectedRow.peakSpeed}<small>km/h</small></b>
+              <b>n/a</b>
             </div>
             <div>
               <span>Avg Speed</span>
-              <b>{selectedRow.avgSpeed}<small>km/h</small></b>
+              <b>n/a</b>
             </div>
             <div>
               <span>Peak Accel</span>
@@ -1149,7 +1254,7 @@ function HardwareDetail() {
         <div className="deviceTile" key={name}>
           <img src={asset(image)} alt={name} />
           <b>{name}</b>
-          <span><BatteryFull size={13} />100% Connected</span>
+          <span><BatteryFull size={13} />Real data source</span>
         </div>
       ))}
     </div>
@@ -1169,19 +1274,17 @@ function ActionDetail() {
 
 function DashboardSummary({ player, data, intensityRows = [] }) {
   const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
-  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')?.[1] || 'n/a'
+  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot' || label === 'Best Swing')?.[1] || 'n/a'
   const avgIntensity = intensityRows.length
     ? Math.round(intensityRows.reduce((total, row) => total + row.intensity, 0) / intensityRows.length)
     : 0
-  const peakSwing = intensityRows.reduce((best, row) => (row.peakSpeed > best.peakSpeed ? row : best), intensityRows[0] || { peakSpeed: 0, level: 'n/a', category: 'unknown' })
-
   return (
     <div className="summaryDetail">
       <div className="summaryHero">
         <div>
           <span>Current Player</span>
           <h3>{player.name}</h3>
-          <p>{player.level} · {player.hand} hand · baseline {player.baseline}/100</p>
+          <p>{player.level} · baseline {player.baseline}/100</p>
         </div>
         <div>
           <b>{data.timer}</b>
@@ -1208,7 +1311,7 @@ function DashboardSummary({ player, data, intensityRows = [] }) {
         <article>
           <Zap size={20} />
           <span>Peak Swing</span>
-          <b>{peakSwing.peakSpeed}<small>km/h</small></b>
+          <b>n/a</b>
         </article>
       </div>
 
@@ -1369,7 +1472,7 @@ const pageMockups = {
       },
       {
         title: 'Live Feedback',
-        items: ['Last shot: Smash #40', 'Impact: Sweet Spot', 'Timing needs earlier contact', 'Elbow angle: 122°'],
+        items: ['Last shot: Smash #40', 'Impact: Sweet Spot', 'Timing needs earlier contact', 'Elbow angle: n/a'],
       },
       {
         title: 'Controls',
@@ -1384,7 +1487,7 @@ const pageMockups = {
     primary: [
       ['Selected Shot', '#40 Smash', 'Latest shot'],
       ['Impact Score', '98/100', 'Strong sweet spot'],
-      ['Elbow Angle', '122°', 'Needs correction'],
+      ['Elbow Angle', 'n/a', 'No real elbow angle data'],
     ],
     sections: [
       {
@@ -1507,9 +1610,9 @@ const pageMockups = {
     title: 'Scoring and System Settings',
     description: 'Configuration for scoring weights, form thresholds, data source, and display preferences.',
     primary: [
-      ['Elbow Range', '85°-105°', 'Recommended'],
-      ['Data Source', 'Mock API', 'Development mode'],
-      ['Units', 'Metric', 'km/h, m/s²'],
+      ['Elbow Range', 'n/a', 'No real elbow angle data'],
+      ['Data Source', 'IMU CSV', 'Real local dataset'],
+      ['Units', 'Metric', 'g, dps'],
     ],
     sections: [
       {
@@ -1543,6 +1646,7 @@ function createVisualizationSets(player, data) {
   const powerScore = data.scores.find((item) => item.label === 'Power')?.value || 0
   const timingScore = data.scores.find((item) => item.label === 'Timing')?.value || 0
   const sweetSpotScore = data.scores.find((item) => item.label === 'Sweet Spot')?.value || 0
+  const numericScore = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0)
 
   return {
     ...visualizationSets,
@@ -1554,13 +1658,9 @@ function createVisualizationSets(player, data) {
     },
     sessionHistory: {
       title: `${player.name} Session History Visualization`,
-      description: 'Overall training score across recent sessions.',
+      description: 'Recorded session score from the available IMU dataset.',
       fileName: `${player.id}-session-history.csv`,
       rows: [
-        { label: 'May 01', value: Math.max(player.baseline - 12, 35), secondary: `${Math.max(Number(totalShots) - 18, 18)} shots` },
-        { label: 'May 08', value: Math.max(player.baseline - 8, 40), secondary: `${Math.max(Number(totalShots) - 12, 20)} shots` },
-        { label: 'May 15', value: Math.max(player.baseline - 5, 45), secondary: `${Math.max(Number(totalShots) - 6, 24)} shots` },
-        { label: 'May 22', value: Math.max(player.baseline - 2, 48), secondary: `${Math.max(Number(totalShots) - 2, 26)} shots` },
         { label: data.bestDate, value: player.baseline, secondary: `${totalShots} shots` },
       ],
     },
@@ -1569,9 +1669,9 @@ function createVisualizationSets(player, data) {
       description: 'Power, timing, sweet spot, and consistency score trend.',
       fileName: `${player.id}-training-trends.csv`,
       rows: [
-        { label: 'Power', value: Number(powerScore), secondary: data.scores[0]?.note || '' },
-        { label: 'Timing', value: Number(timingScore), secondary: data.scores[1]?.note || '' },
-        { label: 'Sweet Spot', value: Number(sweetSpotScore), secondary: data.scores[2]?.note || '' },
+        { label: 'Power', value: numericScore(powerScore), secondary: data.scores[0]?.note || '' },
+        { label: 'Timing', value: numericScore(timingScore), secondary: data.scores[1]?.note || '' },
+        { label: 'Sweet Spot', value: numericScore(sweetSpotScore), secondary: data.scores[2]?.note || '' },
         { label: 'Consistency', value: consistency, secondary: 'Session stability' },
       ],
     },
@@ -1580,21 +1680,27 @@ function createVisualizationSets(player, data) {
       description: 'Latest feedback signals from the current training session.',
       fileName: `${player.id}-live-feedback.csv`,
       rows: [
-        { label: 'Impact', value: Number(sweetSpotScore), secondary: data.recentShots[0]?.[2] || 'Frame Hit' },
-        { label: 'Timing', value: Number(timingScore), secondary: data.scores[1]?.note || '' },
+        { label: 'Impact', value: numericScore(sweetSpotScore), secondary: data.recentShots[0]?.[2] || 'Frame Hit' },
+        { label: 'Timing', value: numericScore(timingScore), secondary: data.scores[1]?.note || '' },
         { label: 'Power', value: getShotScore(data.recentShots), secondary: data.recentShots[0]?.[1] || 'Shot' },
-        { label: 'Elbow Form', value: Math.max(100 - Number(data.formStats[0]?.[2] || 0) * 4, 35), secondary: data.formStats[0]?.[2] || '0' },
+        { label: 'Elbow Form', value: 0, secondary: 'No real elbow data' },
+      ],
+    },
+    deviceHealth: {
+      title: 'Real Data Source Status',
+      description: 'Sources currently represented by real local data.',
+      fileName: 'real-data-sources.csv',
+      rows: [
+        { label: 'IMU CSV', value: 100, secondary: `${totalShots} rows loaded` },
+        { label: 'WebSocket JSONL', value: 0, secondary: 'Run receiver to collect live events' },
       ],
     },
     playerHistory: {
       title: `${player.name} Player History Visualization`,
-      description: 'Baseline progress for the selected player.',
+      description: 'Only the available recorded session is shown.',
       fileName: `${player.id}-player-history.csv`,
       rows: [
-        { label: 'Baseline', value: Math.max(player.baseline - 14, 35), secondary: 'First session' },
-        { label: 'Week 1', value: Math.max(player.baseline - 9, 40), secondary: 'Foundation' },
-        { label: 'Week 2', value: Math.max(player.baseline - 4, 45), secondary: data.drill },
-        { label: 'Current', value: player.baseline, secondary: player.level },
+        { label: data.bestDate, value: player.baseline, secondary: data.drill },
       ],
     },
   }
@@ -1602,19 +1708,15 @@ function createVisualizationSets(player, data) {
 
 function createRecordLists(player, data) {
   const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
-  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')
+  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot' || label === 'Best Swing')
   const sessionRows = [
-    [data.bestDate, `${totalShots} shots`, `Overall ${player.baseline}`, bestShot?.[1] || 'Best shot', data.timer],
-    ['May 22', `${Math.max(Number(totalShots) - 2, 20)} shots`, `Overall ${Math.max(player.baseline - 2, 40)}`, data.drill, '17m 12s'],
-    ['May 15', `${Math.max(Number(totalShots) - 6, 18)} shots`, `Overall ${Math.max(player.baseline - 5, 38)}`, 'Technique focus', '20m 02s'],
-    ['May 08', `${Math.max(Number(totalShots) - 12, 16)} shots`, `Overall ${Math.max(player.baseline - 8, 35)}`, 'Form focus', '16m 44s'],
-    ['May 01', `${Math.max(Number(totalShots) - 18, 14)} shots`, `Overall ${Math.max(player.baseline - 12, 30)}`, 'Baseline', '15m 28s'],
+    [data.bestDate, `${totalShots} shots`, `Consistency ${player.baseline}%`, bestShot?.[1] || 'Best swing', data.timer],
   ]
-  const playerRows = players.map((item) => [
+  const playerRows = [player].map((item) => [
     item.name,
     item.level,
-    `${item.hand} hand`,
-    `Overall ${item.id === player.id ? player.baseline : item.baseline}`,
+    'No hand metadata',
+    `Consistency ${item.id === player.id ? player.baseline : item.baseline}%`,
     item.id === player.id ? 'Active' : 'Inactive',
   ])
   const shotRows = data.recentShots.map(([id, shot, result, power, time]) => [`#${id}`, shot, result, `Power ${power}`, time])
@@ -1628,9 +1730,9 @@ function createRecordLists(player, data) {
       ...recordLists.allData,
       rows: [
         ...shotRows.slice(0, 2).map((row) => ['Shot', row[0], row[1], row[3], row[4]]),
-        ['Session', data.bestDate, `${totalShots} shots`, `Overall ${player.baseline}`, data.timer],
+        ['Session', data.bestDate, `${totalShots} shots`, `Consistency ${player.baseline}%`, data.timer],
         ['Device', 'Core Sensor', 'Connected', 'Battery 100%', 'Seen now'],
-        ['Player', player.name, player.level, `Overall ${player.baseline}`, 'Active'],
+        ['Player', player.name, player.level, `Consistency ${player.baseline}%`, 'Active'],
         ['Report', `${player.name} Summary`, 'Ready', 'CSV/PDF', 'Updated today'],
       ],
     },
@@ -1640,7 +1742,7 @@ function createRecordLists(player, data) {
 function createPageMockups(player, data) {
   const lists = createRecordLists(player, data)
   const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
-  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')?.[1] || 'Best shot'
+  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot' || label === 'Best Swing')?.[1] || 'Best swing'
   const latestShot = data.recentShots[0] || ['0', 'Shot', 'Frame Hit', '0', '00:00']
 
   return {
@@ -1680,20 +1782,38 @@ function createPageMockups(player, data) {
     reports: {
       ...pageMockups.reports,
       primary: [
-        ['Sessions', '12', `${player.name} history`],
-        ['Best Score', String(player.baseline), bestShot],
-        ['Trend', player.baseline >= 85 ? '+12%' : '+6%', `${data.drill} improvement`],
+        ['Sessions', '1', 'Available real dataset'],
+        ['Consistency', `${player.baseline}%`, bestShot],
+        ['Rows', totalShots, data.drill],
+      ],
+      sections: [
+        {
+          title: 'Session History',
+          items: [`${data.bestDate}: ${totalShots} IMU recordings`, `Best swing: ${bestShot}`, `Recorded duration: ${data.timer}`],
+        },
+        {
+          title: 'Exports',
+          items: ['CSV shot data', 'Swing intensity rows', 'Receiver JSONL when live stream is running'],
+        },
       ],
       records: lists.sessions,
     },
     'data-explorer': {
       ...pageMockups['data-explorer'],
+      primary: [
+        ['Records', totalShots, 'Real IMU rows'],
+        ['Classes', String(data.formStats.length - 1), 'Recorded impact labels'],
+        ['Export', 'CSV', 'Current visible rows'],
+      ],
       sections: [
         {
           title: 'Filters',
-          items: ['Type: All', 'Date range: This month', `Player: ${player.name}`, 'Status: Any'],
+          items: ['Type: IMU rows', `Session: ${data.bestDate}`, `Dataset: ${player.name}`],
         },
-        ...pageMockups['data-explorer'].sections.slice(1),
+        {
+          title: 'Interactive Views',
+          items: ['Shot List', 'Session History', 'Trend Charts'],
+        },
       ],
       records: lists.allData,
     },
@@ -1701,14 +1821,37 @@ function createPageMockups(player, data) {
       ...pageMockups.players,
       primary: [
         ['Current Player', player.name, player.level],
-        ['Dominant Hand', player.hand, 'Profile setting'],
-        ['Baseline', `${player.baseline}/100`, 'Current average'],
+        ['Dominant Hand', 'n/a', 'No hand metadata yet'],
+        ['Consistency', `${player.baseline}%`, 'Current real dataset'],
       ],
       records: lists.players,
     },
     sensors: {
       ...pageMockups.sensors,
+      primary: [
+        ['Sources', String(devices.length), 'Receiver and IMU CSV'],
+        ['Battery', 'n/a', 'No battery field in real data'],
+        ['Signal', 'n/a', 'No RSSI field in real data'],
+      ],
       records: lists.devices,
+    },
+    settings: {
+      ...pageMockups.settings,
+      primary: [
+        ['Elbow Range', 'n/a', 'No real elbow angle data yet'],
+        ['Data Source', 'IMU CSV', 'Real local dataset'],
+        ['Units', 'Metric', 'km/h, g, dps'],
+      ],
+      sections: [
+        {
+          title: 'Data Source',
+          items: ['swingIntensityRows from IMU CSV', 'WebSocket receiver JSONL for live events', 'No mock API values shown'],
+        },
+        {
+          title: 'Missing Real Fields',
+          items: ['Battery percent', 'RSSI signal', 'Elbow angle', 'Player profile metadata'],
+        },
+      ],
     },
   }
 }
@@ -2413,7 +2556,7 @@ function DetailModal({ category, onClose }) {
 
 export default function App() {
   const [activePage, setActivePage] = useState('overview')
-  const [selectedPlayerId, setSelectedPlayerId] = useState(players[0].id)
+  const [selectedPlayerId, setSelectedPlayerId] = useState(realPlayers[0].id)
   const [isPlayerMenuOpen, setIsPlayerMenuOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [selectedVisualizationId, setSelectedVisualizationId] = useState(null)
@@ -2424,8 +2567,8 @@ export default function App() {
     message: 'No Gemini connection yet.',
     reply: '',
   })
-  const selectedPlayer = players.find((player) => player.id === selectedPlayerId) || players[0]
-  const currentData = playerDatasets[selectedPlayer.id] || playerDatasets.player1
+  const selectedPlayer = realPlayers.find((player) => player.id === selectedPlayerId) || realPlayers[0]
+  const currentData = realPlayerDatasets[selectedPlayer.id] || realSessionDataset
   const categories = getCategories(currentData)
   const overviewCategories = useMemo(
     () => categories.filter((item) => !HIDDEN_OVERVIEW_CATEGORIES.has(item.id)),
@@ -2542,7 +2685,7 @@ export default function App() {
           <Header
             activePage={activePage}
             selectedPlayer={selectedPlayer}
-            playerOptions={players}
+            playerOptions={realPlayers}
             isPlayerMenuOpen={isPlayerMenuOpen}
             onTogglePlayerMenu={() => setIsPlayerMenuOpen((isOpen) => !isOpen)}
             onSelectPlayer={handleSelectPlayer}

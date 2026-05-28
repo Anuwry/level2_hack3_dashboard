@@ -42,12 +42,14 @@ button {
 
 .appShell {
   min-height: 100vh;
+  width: 100vw;
 }
 
 .app {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
   min-height: 100vh;
+  width: 100%;
   transition: filter 180ms ease, transform 180ms ease;
 }
 
@@ -176,7 +178,7 @@ button {
 
 .main {
   width: 100%;
-  max-width: 1240px;
+  max-width: none;
   min-width: 0;
   padding: 22px 26px 32px;
 }
@@ -1320,6 +1322,22 @@ button {
   display: none;
 }
 
+.elbowStage::after {
+  position: absolute;
+  display: grid;
+  min-width: 86px;
+  min-height: 42px;
+  place-items: center;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 900;
+  text-transform: uppercase;
+  border: 1px solid rgba(226, 232, 240, 0.16);
+  border-radius: 8px;
+  background: rgba(9, 13, 18, 0.82);
+  content: "n/a";
+}
+
 .elbowArc path {
   fill: none;
   stroke: var(--red);
@@ -1350,6 +1368,21 @@ button {
   display: grid;
   gap: 10px;
   align-content: center;
+}
+
+.callout.muted b {
+  display: none;
+}
+
+.callout.muted span::after {
+  display: block;
+  margin-top: 5px;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+  content: "n/a";
 }
 
 .callout {
@@ -1498,52 +1531,86 @@ button {
 
 .formAnalysisDetail {
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1fr);
   gap: 22px;
   align-items: center;
 }
 
-.donut {
-  position: relative;
+.formGraph {
   display: grid;
-  width: 210px;
-  height: 210px;
-  place-items: center;
-  margin: 0 auto;
-  border-radius: 50%;
-  background: conic-gradient(var(--red) 0 18%, var(--orange) 18% 30%, var(--green) 30% 100%);
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(7, 18, 29, 0.56);
 }
 
-.donut::before {
-  position: absolute;
-  width: 126px;
-  height: 126px;
-  content: "";
-  border-radius: 50%;
-  background: #0c1924;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+.formGraphHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
 }
 
-.donut div {
-  position: relative;
-  z-index: 1;
-  text-align: center;
+.formGraphHeader span,
+.formBar span,
+.formBar small {
+  color: var(--muted);
+  font-size: 12px;
 }
 
-.donut b,
-.donut span {
-  display: block;
-}
-
-.donut b {
-  color: #f7fbff;
-  font-size: 42px;
+.formGraphHeader b {
+  font-size: 34px;
   line-height: 1;
 }
 
-.donut span {
-  color: rgba(232, 241, 248, 0.74);
-  font-size: 13px;
+.formBar {
+  display: grid;
+  gap: 7px;
+}
+
+.formBar div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.formBar b {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.formBar i {
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(138, 174, 199, 0.16);
+}
+
+.formBar i span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.formBar.red i span {
+  background: var(--red);
+}
+
+.formBar.orange i span {
+  background: var(--orange);
+}
+
+.formBar.green i span {
+  background: var(--green);
+}
+
+.formBar.cyan i span {
+  background: var(--cyan);
 }
 
 .formStatList {
@@ -3267,7 +3334,7 @@ button:focus-visible {
 }
 
 .main {
-  max-width: 1280px;
+  max-width: none;
   padding: 26px 28px 40px;
 }
 
@@ -3837,10 +3904,6 @@ button:focus-visible {
   border-color: rgba(226, 232, 240, 0.1);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
-}
-
-.donut::before {
-  background: #101720;
 }
 
 .impactDot,
