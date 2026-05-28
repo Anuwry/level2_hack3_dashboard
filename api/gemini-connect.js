@@ -19,6 +19,57 @@ function toNumber(value, fallback = 0) {
 }
 
 function buildSessionAnalysis(session = {}, player = 'Player') {
+  {
+  const scores = session.scores || []
+  const summary = session.summary || []
+  const recentShots = session.recentShots || []
+  const intensityRows = session.swingIntensity || []
+  const timing = findMetric(scores, 'Timing')
+  const sweetSpot = findMetric(scores, 'Sweet Spot')
+  const avgIntensity = findMetric(scores, 'Avg Intensity')
+  const acceleration = findMetric(summary, 'Acceleration')
+  const armGyro = findMetric(summary, 'Arm Gyro')
+  const consistency = findMetric(summary, 'Consistency')
+  const totalShots = findMetric(summary, 'Total Shots')?.value || recentShots.length || 'n/a'
+  const bestShot = findMetric(summary, 'Best Shot') || findMetric(summary, 'Best Swing')
+  const latestShot = recentShots[0]
+  const latestResult = String(latestShot?.result || '').toLowerCase()
+  const sweetSpotScore = toNumber(sweetSpot?.value)
+  const intensityScore = toNumber(avgIntensity?.value)
+  const consistencyScore = toNumber(consistency?.value)
+  const bestIntensity = intensityRows.reduce((best, row) => (
+    toNumber(row.intensity) > toNumber(best?.intensity) ? row : best
+  ), intensityRows[0])
+  const overallScore = Math.round((sweetSpotScore + intensityScore + consistencyScore) / 3)
+  const contactAction = latestResult.includes('sweet')
+    ? `Keep the same contact setup for the next 10 feeds because the latest shot was ${latestShot?.result}. Add force only after 3 clean center contacts in a row.`
+    : `Reduce swing effort by about 20% for the next 5 feeds because the latest shot was ${latestShot?.result || 'not a sweet spot'}. Do one slow shadow swing before each feed and aim the racket face through the center line.`
+  const intensityAction = intensityScore >= 70
+    ? `Avg Intensity is ${avgIntensity?.value}; use short 3-shot sets with 30-45 seconds rest so the arm does not over-rotate as fatigue builds.`
+    : `Avg Intensity is ${avgIntensity?.value}; increase racket speed gradually only after the contact result stays Sweet Spot for a full 5-shot set.`
+  const contactFocus = sweetSpotScore < 50
+    ? `Sweet Spot is ${sweetSpot?.value}, so prioritize accuracy: place a visual target at center contact height and count only center-contact reps.`
+    : `Sweet Spot is ${sweetSpot?.value}, so keep the current contact setup and repeat the same preparation rhythm.`
+
+  return [
+    `Session analysis for ${player}:`,
+    `- Total shots: ${totalShots}; session timing: ${timing?.value ?? session.timer ?? 'n/a'}.`,
+    `- Latest shot: ${latestShot ? `#${latestShot.id} ${latestShot.result}, timing ${latestShot.timing}` : 'n/a'}. Best swing: ${bestShot ? `${bestShot.value} ${bestShot.note || ''}`.trim() : 'n/a'}.`,
+    '',
+    'What the data shows:',
+    `- Sweet Spot: ${sweetSpot?.value ?? 'n/a'}${sweetSpot?.note ? ` (${sweetSpot.note})` : ''}.`,
+    `- Avg Intensity: ${avgIntensity?.value ?? 'n/a'}; strongest swing window: ${bestIntensity ? `#${bestIntensity.shotNo}, intensity ${bestIntensity.intensity}/100, peak gyro ${bestIntensity.peakGyro} dps` : 'n/a'}.`,
+    `- Acceleration: ${acceleration?.value ?? 'n/a'}${acceleration?.note ? `, ${acceleration.note}` : ''}. Arm gyro: ${armGyro?.value ?? 'n/a'}${armGyro?.note ? `, ${armGyro.note}` : ''}.`,
+    '',
+    'Recommendation:',
+    `- ${contactAction}`,
+    `- ${intensityAction}`,
+    `- ${contactFocus}`,
+    '',
+    `Overall score: ${Number.isFinite(overallScore) ? overallScore : 0}/100`,
+  ].join('\n')
+  }
+
   const scores = session.scores || []
   const summary = session.summary || []
   const formStats = session.formStats || []
@@ -165,7 +216,14 @@ grip are good. Focus on hitting the Sweet Spot consistently.]
           },
           body: JSON.stringify({
             system_instruction: {
-              parts: [{ text: coachPrompt }],
+              parts: [{
+                text: [
+                  'You are a badminton coach analyzing real sensor data.',
+                  'Answer in English only.',
+                  'Use only the provided session metrics. Do not invent speed, power, injury, or pose data.',
+                  'Recommendations must be practical actions for the next set, based on latest impact result, Sweet Spot score, Avg Intensity, Acceleration, Arm Gyro, and Timing.',
+                ].join('\n'),
+              }],
             },
             contents: [
               {
@@ -174,6 +232,9 @@ grip are good. Focus on hitting the Sweet Spot consistently.]
                   {
                     text: [
                       `Analyze this badminton session for ${player}.`,
+                      'Answer in English only.',
+                      'Base every recommendation on the provided real session metrics: latest impact result, Sweet Spot score, Avg Intensity, Acceleration, Arm Gyro, and Timing.',
+                      'Give practical badminton actions the player can perform in the next set. Do not explain the data pipeline.',
                       'Use the numbers directly. Do not say you need more data.',
                       `Session data: ${JSON.stringify(session)}`,
                     ].join('\n'),
@@ -189,7 +250,16 @@ grip are good. Focus on hitting the Sweet Spot consistently.]
         },
       )
 
-      data = await upstream.json()
+      const upstreamText = await upstream.text()
+      try {
+        data = upstreamText ? JSON.parse(upstreamText) : {}
+      } catch {
+        data = {
+          error: {
+            message: upstreamText || 'Gemini API returned an empty or non-JSON response.',
+          },
+        }
+      }
 
       if (upstream.ok) {
         break

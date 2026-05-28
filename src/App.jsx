@@ -24,7 +24,6 @@ import {
   Zap,
 } from 'lucide-react'
 import TrainingFormPage from './TrainingFormPage'
-import { swingIntensityRows } from './swingIntensityData.js'
 
 const asset = (name) => `/assets/${name}`
 
@@ -42,7 +41,7 @@ const overviewSystemPrompt = `คุณคือผู้เชี่ยวช�
 - 🔶 Off Spot: ลูกไม่เที่ยงตรง แรงลดลงครึ่งหนึ่ง ต้องใช้แรงเพิ่มขึ้น
 - ❌ Frame Hit: ตีโดนขอบไม้ ลูกไม่แม่น มีโอกาสเสียแต้ม ต้องปรับท่าตี
 
-### 3. ความเร็วลูก (Shuttlecock Speed)
+### 3. IMU Acceleration / Avg Intensity
 - ✅ สูง (≥100 km/h): ถ่ายโอนพลังงานดีเยี่ยม
 - 🔶 ปานกลาง (60–99 km/h): พลังปานกลาง
 - ❌ ต่ำ (<60 km/h): ควรเพิ่มพลังการตี
@@ -62,7 +61,7 @@ Output:
 🏸 ตีได้ สต็อกดี ลูกที่ออกจากไม้แบตมีความเร็วและแม่นยำ
 เนื่องจากตีถูกจุด Sweet Spot หากตีถูกท่าอย่างสม่ำเสมอ
 จะช่วยลดอัตราการบาดเจ็บได้ดี
-[Excellent stroke! High speed and accuracy from Sweet Spot contact.
+[Excellent stroke quality and accuracy from Sweet Spot contact.
 Consistent form like this also reduces injury risk.]
 คะแนน: 100/100 ✅
 
@@ -91,7 +90,7 @@ grip are good. Focus on hitting the Sweet Spot consistently.]
 
 ## รูปแบบการตอบ
 1. สรุป Hit Spot และ GYRO ก่อน
-2. ระบุ Shuttlecock Speed และ Grip
+2. ระบุ Avg Intensity และ Grip
 3. ให้คำแนะนำ 1–2 ประโยค
 4. แสดงคะแนน X/100
 5. ตอบทั้งภาษาไทยและอังกฤษ`
@@ -110,7 +109,7 @@ const overviewPromptText = `คุณคือผู้เชี่ยวชา�
 - Off Spot: ลูกไม่เที่ยงตรง แรงลดลงครึ่งหนึ่ง ต้องใช้แรงเพิ่มขึ้น
 - Frame Hit: ตีโดนขอบไม้ ลูกไม่แม่น มีโอกาสเสียแต้ม ต้องปรับท่าตี
 
-### 3. ความเร็วลูก (Shuttlecock Speed)
+### 3. IMU Acceleration / Avg Intensity
 - สูง (>=100 km/h): ถ่ายโอนพลังงานดีเยี่ยม
 - ปานกลาง (60-99 km/h): พลังปานกลาง
 - ต่ำ (<60 km/h): ควรเพิ่มพลังการตี
@@ -130,7 +129,7 @@ Output:
 ตีได้สโตรกดี ลูกที่ออกจากไม้แบตมีความเร็วและแม่นยำ
 เนื่องจากตีถูกจุด Sweet Spot หากตีถูกท่าอย่างสม่ำเสมอ
 จะช่วยลดอัตราการบาดเจ็บได้ดี
-[Excellent stroke! High speed and accuracy from Sweet Spot contact.
+[Excellent stroke quality and accuracy from Sweet Spot contact.
 Consistent form like this also reduces injury risk.]
 คะแนน: 100/100
 
@@ -159,13 +158,16 @@ grip are good. Focus on hitting the Sweet Spot consistently.]
 
 ## รูปแบบการตอบ
 1. สรุป Hit Spot และ GYRO ก่อน
-2. ระบุ Shuttlecock Speed และ Grip
+2. ระบุ Avg Intensity และ Grip
 3. ให้คำแนะนำ 1-2 ประโยค
 4. แสดงคะแนน X/100
 5. ตอบทั้งภาษาไทยและอังกฤษ`
 
 const GEMINI_FLASH_MODEL = 'gemini-2.5-flash'
 const HIDDEN_OVERVIEW_CATEGORIES = new Set(['hardware', 'actions', 'coach'])
+const RECEIVER_SESSION_URL = '/data/real_sessions/session_001/stream_events.jsonl'
+const RECEIVER_SWING_WINDOW_ROWS = 130
+const NA = 'n/a'
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: Home },
@@ -179,8 +181,8 @@ const navItems = [
 ]
 
 const devices = [
-  ['Arduino Q WebSocket receiver', 'ai-coach-hub.png'],
-  ['Nano 33 BLE Sense IMU CSV', 'core-sensor.png'],
+  ['Arduino Q arm IMU receiver', 'ai-coach-hub.png'],
+  ['Nano racket IMU stream', 'core-sensor.png'],
 ]
 
 const scores = [
@@ -269,7 +271,7 @@ const playerDatasets = {
     advice: {
       title: 'Keep the swing compact before adding power.',
       body: 'Timing and sweet spot are still developing. Use shorter reps and keep the racket face stable through contact.',
-      steps: ['Run 10 slow clear shots before full speed.', 'Pause after contact and check racket face direction.', 'Use a lower target speed until timing reaches 70/100.'],
+      steps: ['Run 10 slow clear shots before full intensity.', 'Pause after contact and check racket face direction.', 'Use a lower intensity target until timing reaches 70/100.'],
     },
   },
   player3: {
@@ -312,6 +314,28 @@ const playerDatasets = {
 }
 
 const clampScore = (value) => Math.max(0, Math.min(100, Math.round(value)))
+const toFiniteNumber = (value, fallback = 0) => {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : fallback
+}
+const vectorMagnitude = (...values) => Math.sqrt(values.reduce((sum, value) => sum + value ** 2, 0))
+const formatDuration = (milliseconds) => {
+  if (!Number.isFinite(milliseconds) || milliseconds <= 0) return NA
+
+  const totalSeconds = Math.round(milliseconds / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours) return `${hours}h ${minutes}m ${seconds}s`
+  if (minutes) return `${minutes}m ${seconds}s`
+  return `${seconds}s`
+}
+const formatPercentValue = (value) => {
+  if (value === NA || value === undefined || value === null || value === '') return NA
+  const text = String(value)
+  return text.includes('%') ? text : `${text}%`
+}
 
 const realCategoryLabel = (category = '') => category
   .split('_')
@@ -324,75 +348,475 @@ const countRealCategories = (rows) => rows.reduce((counts, row) => {
   return counts
 }, {})
 
-function createRealSessionDataset(rows) {
+function parseReceiverJsonl(text) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+}
+
+function receiverEventDedupeKey(event) {
+  const row = event.row || {}
+  const context = event.merged_context || {}
+  const sessionId = event.session_id || 'session'
+  const eventType = event.type || 'unknown'
+
+  if (eventType === 'hit_event') {
+    if (row.hit_id) {
+      return [eventType, sessionId, row.hit_id].join('|')
+    }
+
+    return [
+      eventType,
+      sessionId,
+      row.nano_timestamp_ms,
+      row.final_class,
+    ].filter((value) => value !== undefined && value !== null && value !== '').join('|')
+  }
+
+  if (eventType === 'gyro_sample') {
+    return [
+      eventType,
+      sessionId,
+      row.seq,
+      row.nano_timestamp_us,
+      row.q_timestamp_ns,
+    ].filter((value) => value !== undefined && value !== null && value !== '').join('|')
+  }
+
+  if (eventType === 'session_status') {
+    return [
+      eventType,
+      sessionId,
+      event.status,
+      JSON.stringify(event.paths || {}),
+    ].filter((value) => value !== undefined && value !== null && value !== '').join('|')
+  }
+
+  return JSON.stringify({
+    type: eventType,
+    session_id: sessionId,
+    row,
+    merged_context: context,
+    status: event.status,
+  })
+}
+
+function dedupeReceiverEvents(events) {
+  const uniqueEvents = new Map()
+
+  events.forEach((event) => {
+    const key = receiverEventDedupeKey(event)
+    if (!key) return
+    uniqueEvents.set(key, event)
+  })
+
+  return Array.from(uniqueEvents.values())
+}
+
+function normalizeImpactCategory(value = '') {
+  const normalized = String(value).trim().toLowerCase().replace(/[\s-]+/g, '_')
+  if (normalized.includes('off') && normalized.includes('sweet')) return 'off_sweet_spot'
+  if (normalized.includes('sweet')) return 'sweet_spot'
+  if (normalized.includes('frame')) return 'frame_hit'
+  return normalized || 'unknown'
+}
+
+function receiverEventCategory(event) {
+  const row = event.row || {}
+  return normalizeImpactCategory(
+    row.final_class
+      || row.contact_class
+      || row.sweet_spot_class
+      || row.impact
+      || row.label
+      || event.final_class
+      || event.contact_class
+      || event.label,
+  )
+}
+
+function receiverSampleMetrics(event) {
+  const row = event.row || {}
+  const gx = toFiniteNumber(row.nano_gx_dps ?? row.gx_dps)
+  const gy = toFiniteNumber(row.nano_gy_dps ?? row.gy_dps)
+  const gz = toFiniteNumber(row.nano_gz_dps ?? row.gz_dps)
+  const ax = toFiniteNumber(row.nano_ax_g ?? row.ax_g)
+  const ay = toFiniteNumber(row.nano_ay_g ?? row.ay_g)
+  const az = toFiniteNumber(row.nano_az_g ?? row.az_g)
+  const gyroMagnitude = vectorMagnitude(gx, gy, gz)
+  const accelMagnitude = vectorMagnitude(ax, ay, az)
+  const timestampUs = toFiniteNumber(row.nano_timestamp_us)
+
+  return {
+    row,
+    gx,
+    gy,
+    gz,
+    accelMagnitude,
+    gyroMagnitude,
+    timestampUs,
+    intensity: clampScore((gyroMagnitude / 610) * 100),
+  }
+}
+
+function receiverArmSampleMetrics(event) {
+  const row = event.row || {}
+  const gx = toFiniteNumber(row.q_gx_dps)
+  const gy = toFiniteNumber(row.q_gy_dps)
+  const gz = toFiniteNumber(row.q_gz_dps)
+  const ax = toFiniteNumber(row.q_ax_g)
+  const ay = toFiniteNumber(row.q_ay_g)
+  const az = toFiniteNumber(row.q_az_g)
+  const gyroMagnitude = vectorMagnitude(gx, gy, gz)
+  const accelMagnitude = vectorMagnitude(ax, ay, az)
+  const tiltAngle = Math.round(Math.atan2(Math.sqrt(ax ** 2 + az ** 2), Math.max(Math.abs(ay), 0.001)) * 180 / Math.PI)
+
+  return {
+    gx,
+    gy,
+    gz,
+    ax,
+    ay,
+    az,
+    gyroMagnitude,
+    accelMagnitude,
+    tiltAngle,
+  }
+}
+
+function createReceiverArmRows(events) {
+  const gyroSamples = []
+  const armRows = []
+
+  events.forEach((event) => {
+    if (event.type === 'gyro_sample') {
+      gyroSamples.push(event)
+      return
+    }
+
+    if (event.type !== 'hit_event') return
+
+    const hitRow = event.row || {}
+    const category = receiverEventCategory(event)
+    const windowEvents = gyroSamples.slice(-RECEIVER_SWING_WINDOW_ROWS)
+    if (!windowEvents.length) return
+
+    const samples = windowEvents.map(receiverArmSampleMetrics)
+    const latest = samples[samples.length - 1]
+    const avgArmGyro = samples.reduce((total, sample) => total + sample.gyroMagnitude, 0) / samples.length
+    const peakArmGyro = Math.max(...samples.map((sample) => sample.gyroMagnitude))
+    const avgAccel = samples.reduce((total, sample) => total + sample.accelMagnitude, 0) / samples.length
+    const avgAngle = Math.round(samples.reduce((total, sample) => total + sample.tiltAngle, 0) / samples.length)
+
+    armRows.push({
+      id: `arm-hit-${hitRow.hit_id || hitRow.seq || armRows.length + 1}`,
+      hitId: hitRow.hit_id || hitRow.seq || armRows.length + 1,
+      shotNo: String(hitRow.shot_no || hitRow.shotNo || hitRow.hit_id || armRows.length + 1),
+      category,
+      samples: samples.length,
+      angle: `${avgAngle} deg`,
+      currentAngle: `${latest.tiltAngle} deg`,
+      gyro: `${Math.round(avgArmGyro)} dps`,
+      peakGyro: `${Math.round(peakArmGyro)} dps`,
+      accel: `${avgAccel.toFixed(2)}g`,
+      tone: category === 'sweet_spot' ? 'green' : category === 'frame_hit' ? 'red' : 'cyan',
+    })
+  })
+
+  return armRows
+}
+
+function createReceiverArmStats(events) {
+  const rows = createReceiverArmRows(events)
+
+  if (!rows.length) {
+    return {
+      hasArmData: false,
+      currentAngle: NA,
+      targetRange: '80-120 deg',
+      avgArmGyro: NA,
+      peakArmGyro: NA,
+      rows: [],
+      note: 'No Q arm IMU rows available.',
+    }
+  }
+
+  const latest = rows[rows.length - 1]
+  const avgArmGyro = rows.reduce((total, row) => total + toFiniteNumber(String(row.gyro).replace(' dps', '')), 0) / rows.length
+  const peakArmGyro = Math.max(...rows.map((row) => toFiniteNumber(String(row.peakGyro).replace(' dps', ''))))
+
+  return {
+    hasArmData: true,
+    currentAngle: latest.angle,
+    targetRange: '80-120 deg',
+    avgArmGyro: `${Math.round(avgArmGyro)} dps`,
+    peakArmGyro: `${Math.round(peakArmGyro)} dps`,
+    rows: rows.slice().reverse(),
+    note: `Q arm IMU, same ${RECEIVER_SWING_WINDOW_ROWS}-row hit windows as Sweet Spot.`,
+  }
+}
+
+function createReceiverSessionTiming(events) {
+  const timestamps = events
+    .filter((event) => event.type === 'gyro_sample')
+    .map((event) => toFiniteNumber(event.row?.nano_timestamp_us))
+    .filter((timestamp) => timestamp > 0)
+
+  if (timestamps.length >= 2) {
+    const start = Math.min(...timestamps)
+    const end = Math.max(...timestamps)
+    return {
+      durationMs: (end - start) / 1000,
+      display: formatDuration((end - start) / 1000),
+      note: 'from first log timestamp to last log timestamp',
+    }
+  }
+
+  const receiveTimes = events
+    .map((event) => Date.parse(event.pc_receive_time || event.timestamp || ''))
+    .filter(Number.isFinite)
+
+  if (receiveTimes.length >= 2) {
+    const start = Math.min(...receiveTimes)
+    const end = Math.max(...receiveTimes)
+    return {
+      durationMs: end - start,
+      display: formatDuration(end - start),
+      note: 'from first receive time to last receive time',
+    }
+  }
+
+  return {
+    durationMs: 0,
+    display: NA,
+    note: 'not enough timestamps',
+  }
+}
+
+function createReceiverSwingRows(events) {
+  const gyroSamples = []
+  const swingRows = []
+
+  events.forEach((event) => {
+    if (event.type === 'gyro_sample') {
+      gyroSamples.push(event)
+      return
+    }
+
+    if (event.type !== 'hit_event') return
+
+    const hitRow = event.row || {}
+    const category = receiverEventCategory(event)
+    const windowEvents = gyroSamples.slice(-RECEIVER_SWING_WINDOW_ROWS)
+    if (!windowEvents.length) return
+
+    const samples = windowEvents.map(receiverSampleMetrics)
+    const firstTimestamp = samples.find((sample) => sample.timestampUs)?.timestampUs || 0
+    const lastTimestamp = [...samples].reverse().find((sample) => sample.timestampUs)?.timestampUs || 0
+    const durationMs = firstTimestamp && lastTimestamp && lastTimestamp >= firstTimestamp
+      ? Math.round((lastTimestamp - firstTimestamp) / 1000)
+      : 0
+    const avgGyro = samples.reduce((total, sample) => total + sample.gyroMagnitude, 0) / samples.length
+    const avgAccel = samples.reduce((total, sample) => total + sample.accelMagnitude, 0) / samples.length
+    const peakSample = samples.reduce((peak, sample) => (
+      sample.gyroMagnitude > peak.gyroMagnitude ? sample : peak
+    ), samples[0])
+    const peakAccel = samples.reduce((peak, sample) => Math.max(peak, sample.accelMagnitude), 0)
+    const intensity = clampScore((avgGyro / 610) * 100)
+    const level = intensity >= 75 ? 'High' : intensity >= 35 ? 'Medium' : 'Low'
+
+    swingRows.push({
+      id: `receiver-hit-${hitRow.hit_id || hitRow.seq || swingRows.length + 1}`,
+      hitId: hitRow.hit_id || hitRow.seq || swingRows.length + 1,
+      category,
+      shotNo: String(hitRow.shot_no || hitRow.shotNo || hitRow.hit_id || swingRows.length + 1),
+      file: `Nano racket IMU: ${RECEIVER_SWING_WINDOW_ROWS} rows before hit`,
+      durationMs,
+      samples: samples.length,
+      peakGyro: Math.round(peakSample.gyroMagnitude),
+      peakAccel: Number(peakAccel.toFixed(2)),
+      avgAccel: Number(avgAccel.toFixed(2)),
+      intensity,
+      level,
+      tone: category === 'sweet_spot' ? 'green' : category === 'frame_hit' ? 'red' : intensity >= 35 ? 'cyan' : 'orange',
+      impactMs: durationMs,
+      series: samples.map((sample, index) => {
+        const time = sample.timestampUs && firstTimestamp ? Math.round((sample.timestampUs - firstTimestamp) / 1000) : index
+        return [time, sample.intensity]
+      }),
+      replay: samples.map((sample, index) => {
+        const time = sample.timestampUs && firstTimestamp ? Math.round((sample.timestampUs - firstTimestamp) / 1000) : index
+        return [time, sample.gx, sample.gy, sample.gz, sample.accelMagnitude, sample.gyroMagnitude, sample.intensity]
+      }),
+    })
+  })
+
+  return swingRows
+}
+
+function createEmptyReceiverDataset(statusMessage = 'No receiver data file found yet.') {
+  return {
+    timer: NA,
+    drill: 'Receiver stream',
+    targetShots: NA,
+    bestDate: NA,
+    hasRealData: false,
+    dataSourceMessage: statusMessage,
+    scores: [
+      { label: 'Timing', value: NA, icon: Clock3, tone: 'orange', note: statusMessage },
+      { label: 'Sweet Spot', value: NA, icon: Target, tone: 'orange', note: statusMessage },
+      { label: 'Avg Intensity', value: NA, icon: Zap, tone: 'orange', note: statusMessage },
+      { label: 'Injury Risk', value: NA, icon: ShieldAlert, tone: 'orange', note: 'No elbow or pose risk data in receiver file.' },
+    ],
+    formStats: [
+      ['Sweet Spot Rows', 'Receiver file only', NA, 'green'],
+      ['Off Sweet Spot Rows', 'Receiver file only', NA, 'orange'],
+      ['Frame Hit Rows', 'Receiver file only', NA, 'red'],
+      ['Total Hit Events', statusMessage, NA, 'cyan'],
+    ],
+    summaryItems: [
+      ['Total Shots', NA, statusMessage, Target],
+      ['Best Swing', NA, 'Receiver file only', Medal],
+      ['Avg Intensity', NA, 'Receiver file only', Zap],
+      ['Acceleration', NA, 'Receiver file only', Activity],
+      ['Avg Peak Gyro', NA, 'Receiver file only', Gauge],
+      ['Consistency', NA, 'Receiver file only', Gauge],
+    ],
+    recentShots: [],
+    impactRows: [],
+    armStats: createReceiverArmStats([]),
+    advice: {
+      title: 'Waiting for receiver data.',
+      body: statusMessage,
+      steps: ['Run python src\\receiver.py.', 'Send hit_event JSON from Q.', 'Refresh the dashboard after stream_events.jsonl is created.'],
+    },
+  }
+}
+
+function createReceiverSessionDataset(events, statusMessage = '') {
+  const hitEvents = events.filter((event) => event.type === 'hit_event')
+  const armStats = createReceiverArmStats(events)
+  const sessionTiming = createReceiverSessionTiming(events)
+  if (!hitEvents.length) {
+    return {
+      ...createEmptyReceiverDataset(statusMessage || 'Receiver file exists, but no hit_event rows are available yet.'),
+      armStats,
+      timer: sessionTiming.display,
+    }
+  }
+  const swingRows = createReceiverSwingRows(events)
+  const swingRowsByHitId = new Map(swingRows.map((row) => [String(row.hitId || row.shotNo), row]))
+  const avgReceiverIntensity = swingRows.length
+    ? Math.round(swingRows.reduce((total, row) => total + row.intensity, 0) / swingRows.length)
+    : NA
+  const avgReceiverAccel = swingRows.length
+    ? `${(swingRows.reduce((total, row) => total + row.avgAccel, 0) / swingRows.length).toFixed(2)}g`
+    : NA
+  const maxReceiverAccel = swingRows.length
+    ? `${Math.max(...swingRows.map((row) => row.peakAccel)).toFixed(2)}g peak`
+    : `No ${RECEIVER_SWING_WINDOW_ROWS}-row swing windows`
+
+  const rows = hitEvents.map((event, index) => {
+    const row = event.row || {}
+    const context = event.merged_context || {}
+    const category = receiverEventCategory(event)
+    const hitId = row.hit_id || row.id || row.seq || `${category}-${index + 1}`
+    const swingRow = swingRowsByHitId.get(String(hitId))
+    const gyroValues = [
+      context.nano_gx_dps ?? row.nano_gx_dps ?? row.gx_dps,
+      context.nano_gy_dps ?? row.nano_gy_dps ?? row.gy_dps,
+      context.nano_gz_dps ?? row.nano_gz_dps ?? row.gz_dps,
+    ].map((value) => Number(value)).filter(Number.isFinite)
+    const peakGyro = gyroValues.length
+      ? Math.round(Math.max(...gyroValues.map((value) => Math.abs(value))))
+      : 0
+
+    return {
+      id: hitId,
+      shotNo: String(row.shot_no || row.shotNo || row.hit_id || row.seq || index + 1).padStart(2, '0'),
+      category,
+      peakGyro: swingRow?.peakGyro || peakGyro,
+      timingMs: swingRow?.durationMs ?? NA,
+      eventTime: event.pc_receive_time || event.timestamp || NA,
+      tone: category === 'sweet_spot' ? 'green' : category === 'frame_hit' ? 'red' : 'orange',
+    }
+  })
+
   const totalShots = rows.length
   const counts = countRealCategories(rows)
   const sweetSpotCount = counts.sweet_spot || 0
   const offSweetSpotCount = counts.off_sweet_spot || 0
   const frameHitCount = counts.frame_hit || 0
-  const avgIntensity = totalShots ? rows.reduce((sum, row) => sum + row.intensity, 0) / totalShots : 0
   const avgPeakGyro = totalShots ? rows.reduce((sum, row) => sum + row.peakGyro, 0) / totalShots : 0
   const sweetSpotScore = totalShots ? (sweetSpotCount / totalShots) * 100 : 0
   const consistency = totalShots ? ((sweetSpotCount + offSweetSpotCount * 0.5) / totalShots) * 100 : 0
-  const bestRow = rows.reduce((best, row) => (row.peakSpeed > best.peakSpeed ? row : best), rows[0] || { peakSpeed: 0, category: 'unknown', shotNo: '0' })
-  const maxDurationMs = rows.reduce((max, row) => Math.max(max, row.durationMs || 0), 0)
   const recentShots = rows.slice(-5).reverse().map((row) => [
     row.shotNo,
     realCategoryLabel(row.category),
     realCategoryLabel(row.category),
-    String(row.intensity),
-    `${(row.durationMs / 1000).toFixed(2)}s`,
+    row.timingMs === NA ? NA : `${row.timingMs}ms`,
+    row.eventTime,
     row.tone,
   ])
+  const bestRow = rows.reduce((best, row) => (row.peakGyro > best.peakGyro ? row : best), rows[0])
+  const firstReceiveTime = hitEvents[0]?.pc_receive_time || hitEvents[0]?.timestamp || NA
 
   return {
-    timer: maxDurationMs ? `00:00:${String(Math.round(maxDurationMs / 1000)).padStart(2, '0')}` : '00:00:00',
-    drill: 'Recorded IMU dataset',
+    timer: sessionTiming.display,
+    drill: 'Receiver stream',
     targetShots: totalShots,
-    bestDate: '2026-05-27',
+    bestDate: firstReceiveTime,
+    hasRealData: true,
+    dataSourceMessage: `${totalShots} hit_event rows loaded from receiver file.`,
     scores: [
-      { label: 'Power', value: clampScore(avgIntensity), icon: Zap, tone: avgIntensity >= 70 ? 'green' : avgIntensity >= 40 ? 'cyan' : 'orange', note: `Avg IMU intensity ${avgIntensity.toFixed(1)}/100` },
-      { label: 'Timing', value: 'n/a', icon: Clock3, tone: 'orange', note: 'No real timing labels in current data.' },
+      { label: 'Timing', value: sessionTiming.display, icon: Clock3, tone: 'cyan', note: sessionTiming.note },
       { label: 'Sweet Spot', value: clampScore(sweetSpotScore), icon: Target, tone: sweetSpotScore >= 70 ? 'green' : sweetSpotScore >= 40 ? 'cyan' : 'orange', note: `${sweetSpotCount}/${totalShots} recorded sweet spot rows` },
-      { label: 'Injury Risk', value: 'n/a', icon: ShieldAlert, tone: 'orange', note: 'No elbow or pose risk data in current feed.' },
+      { label: 'Avg Intensity', value: avgReceiverIntensity, icon: Zap, tone: avgReceiverIntensity >= 70 ? 'green' : avgReceiverIntensity >= 35 ? 'cyan' : 'orange', note: `${RECEIVER_SWING_WINDOW_ROWS} rows before each hit_event` },
     ],
     formStats: [
-      ['Sweet Spot Rows', 'From real IMU filename labels', String(sweetSpotCount), 'green'],
-      ['Off Sweet Spot Rows', 'From real IMU filename labels', String(offSweetSpotCount), 'orange'],
-      ['Frame Hit Rows', 'From real IMU filename labels', String(frameHitCount), 'red'],
-      ['Total IMU Rows', 'CSV files converted into dashboard rows', String(totalShots), 'cyan'],
+      ['Sweet Spot Rows', 'From receiver hit_event labels', String(sweetSpotCount), 'green'],
+      ['Off Sweet Spot Rows', 'From receiver hit_event labels', String(offSweetSpotCount), 'orange'],
+      ['Frame Hit Rows', 'From receiver hit_event labels', String(frameHitCount), 'red'],
+      ['Total Hit Events', 'stream_events.jsonl', String(totalShots), 'cyan'],
     ],
     summaryItems: [
-      ['Total Shots', String(totalShots), 'Real IMU CSV recordings', Target],
-      ['Best Swing', `${realCategoryLabel(bestRow.category)} #${bestRow.shotNo}`, 'Real IMU label', Medal],
-      ['Avg Intensity', `${avgIntensity.toFixed(1)}`, 'from swingIntensityRows', Zap],
-      ['Peak Speed', 'n/a', 'No measured swing speed field', Activity],
+      ['Total Shots', String(totalShots), 'Receiver hit_event rows', Target],
+      ['Best Swing', `${realCategoryLabel(bestRow.category)} #${bestRow.shotNo}`, 'Highest receiver gyro value', Medal],
+      ['Timing', sessionTiming.display, sessionTiming.note, Clock3],
+      ['Avg Intensity', avgReceiverIntensity === NA ? NA : `${avgReceiverIntensity}/100`, `${RECEIVER_SWING_WINDOW_ROWS} rows before each hit_event`, Zap],
+      ['Acceleration', avgReceiverAccel, maxReceiverAccel, Activity],
+      ['Arm Gyro', armStats.avgArmGyro, `Q arm IMU peak ${armStats.peakArmGyro}`, ShieldAlert],
       ['Avg Peak Gyro', `${Math.round(avgPeakGyro)}`, 'dps', Gauge],
       ['Consistency', `${clampScore(consistency)}%`, 'based on recorded impact labels', Gauge],
     ],
     recentShots,
+    impactRows: rows,
+    armStats,
     advice: {
-      title: frameHitCount > sweetSpotCount ? 'Reduce frame-hit contact first.' : 'Keep collecting sweet-spot labeled swings.',
-      body: `Current dashboard uses ${totalShots} real IMU CSV recordings: ${sweetSpotCount} sweet spot, ${offSweetSpotCount} off sweet spot, ${frameHitCount} frame hit.`,
-      steps: ['Run the WebSocket receiver to append live events to JSONL.', 'Keep raw IMU CSV on Q and sync the session folder.', 'Add real pose/elbow data before showing injury risk.'],
+      title: frameHitCount > sweetSpotCount ? 'Reduce frame-hit contact first.' : 'Keep collecting receiver hit events.',
+      body: `Current dashboard uses ${totalShots} hit_event rows from stream_events.jsonl: ${sweetSpotCount} sweet spot, ${offSweetSpotCount} off sweet spot, ${frameHitCount} frame hit.`,
+      steps: ['Keep receiver.py running while Q streams data.', 'Refresh after new hit_event rows arrive.', 'Add real pose/elbow data before showing injury risk.'],
     },
   }
 }
-const realSessionDataset = createRealSessionDataset(swingIntensityRows)
+
+function createReceiverIntensityRows(events) {
+  return createReceiverSwingRows(events)
+}
+
+const realSessionDataset = createEmptyReceiverDataset()
 const realPlayers = [
   {
     id: 'recorded-session',
     number: '01',
     name: 'Recorded Session',
-    level: 'Real IMU data',
-    hand: 'n/a',
-    baseline: clampScore(Number(String(realSessionDataset.summaryItems.find(([label]) => label === 'Consistency')?.[1] || '0').replace('%', ''))),
+    level: 'Receiver file only',
+    hand: NA,
+    baseline: NA,
   },
 ]
-const realPlayerDatasets = {
-  'recorded-session': realSessionDataset,
-}
-
 const visualizationSets = {
   shotList: {
     title: 'Shot List Visualization',
@@ -635,29 +1059,51 @@ function ScoreOverview({ items = scores }) {
   )
 }
 
-function ElbowDetail() {
+function ElbowDetail({ armStats = createReceiverArmStats([]) }) {
+  const [selectedId, setSelectedId] = useState(armStats.rows?.[0]?.id || '')
+  const selectedRow = armStats.rows?.find((row) => row.id === selectedId) || armStats.rows?.[0]
+
+  useEffect(() => {
+    setSelectedId(armStats.rows?.[0]?.id || '')
+  }, [armStats.rows])
+
   return (
     <div className="detailGrid twoCol">
       <div className="elbowStage">
         <img src={asset('elbows.png')} alt="Elbow form analysis" />
-        <svg className="elbowArc isUnavailable" viewBox="0 0 100 86" aria-hidden="true">
+        <svg className="elbowArc" viewBox="0 0 100 86" aria-hidden="true">
           <path d="M 18 36 C 34 22 61 24 75 46" />
           <path className="inner" d="M 42 37 C 51 43 57 53 59 66" />
           <circle cx="75" cy="46" r="4" />
-          <text x="68" y="31">n/a</text>
         </svg>
       </div>
       <div className="calloutList">
-        <div className="callout muted">
-          <span>Current Angle</span>
-          <b>n/a</b>
-          <p>No real elbow angle or pose data is available in the current feed.</p>
+        <div className={armStats.hasArmData ? 'callout cyan' : 'callout muted'}>
+          <span>{selectedRow ? `Arm Swing #${selectedRow.shotNo}` : 'Current Arm Tilt'}</span>
+          <b>{selectedRow?.angle || armStats.currentAngle}</b>
+          <p>{selectedRow ? `Avg gyro ${selectedRow.gyro} · Peak ${selectedRow.peakGyro} · Accel ${selectedRow.accel}` : armStats.note}</p>
         </div>
-        <div className="callout muted">
+        <div className={armStats.hasArmData ? 'callout green' : 'callout muted'}>
           <span>Target Range</span>
-          <b>n/a</b>
-          <p>Add real pose or elbow-angle data before showing injury-risk guidance.</p>
+          <b>{armStats.targetRange}</b>
+          <p>Q gyro: avg {armStats.avgArmGyro}, peak {armStats.peakArmGyro}.</p>
         </div>
+        {armStats.rows?.length > 0 && (
+          <div className="armRowList">
+            {armStats.rows.map((row) => (
+              <button
+                className={row.id === selectedRow?.id ? 'active' : ''}
+                type="button"
+                onClick={() => setSelectedId(row.id)}
+                key={row.id}
+              >
+                <span>#{row.shotNo}</span>
+                <b>{row.angle}</b>
+                <small>{row.samples} rows · {row.gyro} · {row.accel}</small>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -669,10 +1115,18 @@ const impactLabelMap = {
   off_sweet_spot: 'Soft-Sweet-Spot',
 }
 
-function SweetSpotDetail({ rows = swingIntensityRows }) {
+function SweetSpotDetail({ rows = [] }) {
   const [selectedId, setSelectedId] = useState(rows[0]?.id || '')
   const selectedRow = rows.find((row) => row.id === selectedId) || rows[0]
   const selectedImpact = impactLabelMap[selectedRow?.category] || 'Unknown'
+
+  useEffect(() => {
+    setSelectedId(rows[0]?.id || '')
+  }, [rows])
+
+  if (!selectedRow) {
+    return <div className="emptyState">n/a - no receiver hit_event rows available.</div>
+  }
 
   return (
     <div className="detailGrid twoCol">
@@ -711,11 +1165,18 @@ function FormAnalysisDetail({ stats = realSessionDataset.formStats }) {
     .map(([label, note, value, tone]) => ({
       label,
       note,
-      value: Number(value) || 0,
+      value: Number(value),
+      displayValue: value,
       tone,
     }))
-  const total = Number(totalRow?.[2]) || graphRows.reduce((sum, row) => sum + row.value, 0)
-  const maxValue = Math.max(...graphRows.map((row) => row.value), 1)
+  const numericRows = graphRows.filter((row) => Number.isFinite(row.value))
+  const numericTotal = Number(totalRow?.[2])
+  const total = Number.isFinite(numericTotal)
+    ? numericTotal
+    : numericRows.length
+      ? numericRows.reduce((sum, row) => sum + row.value, 0)
+      : NA
+  const maxValue = Math.max(...numericRows.map((row) => row.value), 1)
 
   return (
     <div className="formAnalysisDetail">
@@ -728,12 +1189,12 @@ function FormAnalysisDetail({ stats = realSessionDataset.formStats }) {
           <div className={`formBar ${row.tone}`} key={row.label}>
             <div>
               <span>{row.label}</span>
-              <b>{row.value}</b>
+              <b>{Number.isFinite(row.value) ? row.value : row.displayValue}</b>
             </div>
             <i>
-              <span style={{ width: `${Math.max((row.value / maxValue) * 100, row.value ? 4 : 0)}%` }} />
+              <span style={{ width: `${Number.isFinite(row.value) ? Math.max((row.value / maxValue) * 100, row.value ? 4 : 0) : 0}%` }} />
             </i>
-            <small>{total ? Math.round((row.value / total) * 100) : 0}% of real rows</small>
+            <small>{Number.isFinite(row.value) && Number.isFinite(total) && total ? `${Math.round((row.value / total) * 100)}% of real rows` : 'n/a'}</small>
           </div>
         ))}
       </div>
@@ -791,30 +1252,15 @@ function SessionDetail({ items = realSessionDataset.summaryItems }) {
 function RecentShotsDetail({ shots = realSessionDataset.recentShots }) {
   return (
     <div className="shotList">
-      {shots.map(([id, shot, result, power, time, tone]) => (
+      {shots.map(([id, shot, result, timing, time, tone]) => (
         <div className="shotRow" key={id}>
           <span>{id}</span>
           <b>{shot}</b>
           <em className={tone}>{result}</em>
-          <small>Power {power}</small>
+          <small>Timing {timing}</small>
           <time>{time}</time>
         </div>
       ))}
-    </div>
-  )
-}
-
-function SpeedDetail() {
-  return (
-    <div className="speedBody">
-      <img src={asset('shuttlecock.png')} alt="Shuttlecock speed" />
-      <div>
-        <span>Max Speed</span>
-        <b>n/a</b>
-        <span>Acceleration</span>
-        <b className="greenText">n/a</b>
-        <small>No measured swing-speed or shuttle-speed field is available. IMU gyro and acceleration remain in Swing Intensity.</small>
-      </div>
     </div>
   )
 }
@@ -824,16 +1270,61 @@ const formatCategoryName = (category) => category
   .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
   .join(' ')
 
-function buildSpeedPath(series, maxSpeed, width = 620, height = 120) {
-  if (!series.length || !maxSpeed) return ''
+function buildIntensityPath(series, maxIntensity, width = 620, height = 120) {
+  if (!series.length || !maxIntensity) return ''
 
   return series
-    .map(([time, speed], index) => {
+    .map(([, intensity], index) => {
       const x = (index / Math.max(series.length - 1, 1)) * width
-      const y = height - (speed / maxSpeed) * (height - 42) - 18
+      const y = height - (intensity / maxIntensity) * (height - 42) - 18
       return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
     })
     .join(' ')
+}
+
+function buildLocalSessionAnalysis(session = {}, player = 'Player') {
+  const findMetric = (items = [], label) => items.find((item) => String(item.label || '').toLowerCase() === label.toLowerCase())
+  const totalShots = findMetric(session.summary, 'Total Shots')?.value || session.recentShots?.length || NA
+  const timing = findMetric(session.scores, 'Timing')
+  const sweetSpot = findMetric(session.scores, 'Sweet Spot')
+  const avgIntensity = findMetric(session.scores, 'Avg Intensity')
+  const acceleration = findMetric(session.summary, 'Acceleration')
+  const armGyro = findMetric(session.summary, 'Arm Gyro')
+  const latestShot = session.recentShots?.[0]
+  const latestResult = String(latestShot?.result || '').toLowerCase()
+  const intensityValue = toFiniteNumber(avgIntensity?.value)
+  const sweetSpotValue = toFiniteNumber(sweetSpot?.value)
+  const accelerationValue = toFiniteNumber(acceleration?.value)
+  const armGyroValue = toFiniteNumber(armGyro?.value)
+  const contactDrill = latestResult.includes('sweet')
+    ? `Keep the same contact point for the next 10 feeds because the latest shot was ${latestShot?.result}. Add force only after 3 clean center contacts in a row`
+    : `Reduce swing effort by about 20% for the next 5 feeds because the latest shot was ${latestShot?.result || 'not a sweet spot'}. Do one slow shadow swing before each feed and aim the racket face through the center line`
+  const intensityDrill = intensityValue >= 70
+    ? `Avg intensity is ${avgIntensity?.value}; use short 3-shot sets with 30-45 seconds rest so the arm does not over-rotate while fatigue builds`
+    : `Avg intensity is ${avgIntensity?.value}; increase racket speed gradually only after the contact result stays Sweet Spot for a full 5-shot set`
+  const controlDrill = sweetSpotValue < 50
+    ? `Sweet Spot is ${sweetSpot?.value}, so prioritize accuracy: place a visual target at center contact height and count only center-contact reps`
+    : `Sweet Spot is ${sweetSpot?.value}, so keep the current contact setup and focus on repeating the same preparation rhythm`
+  const loadDrill = accelerationValue >= 3 || armGyroValue >= 300
+    ? `Acceleration/arm gyro is high (${acceleration?.value || NA}, arm ${armGyro?.value || NA}); reduce backswing size for the next set and stop if the arm feels late or unstable`
+    : `Load looks controlled (${acceleration?.value || NA}, arm ${armGyro?.value || NA}); keep the same tempo and add one extra feed per set`
+
+  return [
+    `Local analysis for ${player}`,
+    '',
+    `- Session timing: ${timing?.value ?? session.timer ?? NA} (${timing?.note || 'receiver log duration'}).`,
+    `- Total shots: ${totalShots}. Latest shot: ${latestShot ? `#${latestShot.id} ${latestShot.result}, timing ${latestShot.timing}` : 'n/a'}.`,
+    `- Sweet Spot: ${sweetSpot?.value ?? NA}${sweetSpot?.note ? ` (${sweetSpot.note})` : ''}.`,
+    `- Avg Intensity: ${avgIntensity?.value ?? NA}${avgIntensity?.note ? ` (${avgIntensity.note})` : ''}.`,
+    `- Acceleration: ${acceleration?.value ?? NA}${acceleration?.note ? `, ${acceleration.note}` : ''}.`,
+    `- Arm gyro: ${armGyro?.value ?? NA}${armGyro?.note ? `, ${armGyro.note}` : ''}.`,
+    '',
+    'Recommendation:',
+    `- ${contactDrill}.`,
+    `- ${intensityDrill}.`,
+    `- ${controlDrill}.`,
+    `- ${loadDrill}.`,
+  ].join('\n')
 }
 
 function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
@@ -845,13 +1336,13 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
   const [frameIndex, setFrameIndex] = useState(0)
 
   const samples = useMemo(
-    () => row?.replay || row?.series?.map(([time, speed]) => [time, 0, 0, speed * 6.1, 1, speed * 6.1, speed]) || [],
+    () => row?.replay || row?.series?.map(([time, intensity]) => [time, 0, 0, intensity * 6.1, 1, intensity * 6.1, intensity]) || [],
     [row],
   )
-  const maxSpeed = Math.max(...samples.map((sample) => sample[6] || 0), 1)
+  const maxIntensity = Math.max(...samples.map((sample) => sample[6] || 0), 1)
   const currentSample = samples[frameIndex] || samples[0] || [0, 0, 0, 0, 0, 0, 0]
-  const currentSpeed = currentSample[6] || 0
-  const currentIntensity = Math.min(100, Math.round((currentSpeed / maxSpeed) * (row?.intensity || 0)))
+  const currentSampleIntensity = currentSample[6] || 0
+  const currentIntensity = Math.min(100, Math.round((currentSampleIntensity / maxIntensity) * (row?.intensity || 0)))
   const durationSec = row ? (row.durationMs / 1000).toFixed(2) : '0.00'
 
   useEffect(() => {
@@ -923,7 +1414,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
       const racketLength = 1.35
 
       return samples.map((sample, index) => {
-        const [time, gx, gy, gz, accel, gyro, speed] = sample
+        const [time, gx, gy, gz, accel, gyro, intensity] = sample
         const dt = Math.max(0.005, Math.min(0.05, ((time || 0) - lastMs) / 1000 || 0.02))
         lastMs = time || lastMs
 
@@ -939,7 +1430,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
         }
         const shaft = rotateRacket({ x: 0, y: racketLength, z: 0 }, roll, pitch, yaw)
         const head = { x: hand.x + shaft.x, y: hand.y + shaft.y, z: hand.z + shaft.z }
-        return { hand, head, roll, pitch, yaw, gyro, accel, speed, speedRatio: (speed || 0) / maxSpeed }
+        return { hand, head, roll, pitch, yaw, gyro, accel, intensity, intensityRatio: (intensity || 0) / maxIntensity }
       })
     }
 
@@ -982,7 +1473,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
         points.push({ x: state.hand.x + offset.x, y: state.hand.y + offset.y, z: state.hand.z + offset.z })
       }
 
-      ctx.strokeStyle = state.speedRatio > 0.72 ? '#69f0ae' : '#ff5d8f'
+      ctx.strokeStyle = state.intensityRatio > 0.72 ? '#69f0ae' : '#ff5d8f'
       ctx.lineWidth = 3
       ctx.globalAlpha = 0.95
       ctx.beginPath()
@@ -995,7 +1486,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
       ctx.stroke()
       ctx.globalAlpha = 1
 
-      drawPoint3D(state.head, '#ff5d8f', 7 + state.speedRatio * 4)
+      drawPoint3D(state.head, '#ff5d8f', 7 + state.intensityRatio * 4)
       drawPoint3D(state.hand, '#69f0ae', 5)
     }
 
@@ -1023,7 +1514,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
         const previous = states[index - 1]
         const point = states[index]
         const isDrawn = index <= activeIndex || !isPlaying
-        drawLine3D(previous.head, point.head, point.speedRatio > 0.72 ? '#69f0ae' : '#33c8ff', point.speedRatio > 0.72 ? 4 : 2, isDrawn ? 0.88 : 0.16)
+        drawLine3D(previous.head, point.head, point.intensityRatio > 0.72 ? '#69f0ae' : '#33c8ff', point.intensityRatio > 0.72 ? 4 : 2, isDrawn ? 0.88 : 0.16)
       }
       ctx.globalAlpha = 1
 
@@ -1068,7 +1559,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(animationRef.current)
     }
-  }, [isPlaying, maxSpeed, onFrameChange, row, samples])
+  }, [isPlaying, maxIntensity, onFrameChange, row, samples])
 
   return (
     <div className="gyroReplayStage">
@@ -1076,7 +1567,7 @@ function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
       <div className="gyroReplayHud">
         <div><span>Frame</span><b>{frameIndex + 1} / {samples.length}</b></div>
         <div><span>Time</span><b>{((currentSample[0] || 0) / 1000).toFixed(2)}s</b></div>
-        <div><span>Speed</span><b>n/a</b></div>
+        <div><span>Intensity</span><b>{currentIntensity}/100</b></div>
         <div><span>Peak Gyro</span><b>{row?.peakGyro || 0} dps</b></div>
       </div>
       <div className="gyroReplaySide">
@@ -1097,15 +1588,15 @@ function SwingIntensityDetail({ rows = [] }) {
   const isSelectedPlaying = playingId === selectedRow?.id
   const graphWidth = 620
   const graphHeight = 120
-  const graphMaxSpeed = Math.max(...(selectedRow?.series || []).map(([, speed]) => speed), 1)
-  const graphPath = buildSpeedPath(selectedRow?.series || [], graphMaxSpeed, graphWidth, graphHeight)
+  const graphMaxIntensity = Math.max(...(selectedRow?.series || []).map(([, intensity]) => intensity), 1)
+  const graphPath = buildIntensityPath(selectedRow?.series || [], graphMaxIntensity, graphWidth, graphHeight)
   const graphLength = selectedRow?.series?.length || 1
   const replayLength = selectedRow?.replay?.length || graphLength
   const playbackProgress = playbackFrameIndex / Math.max(replayLength - 1, 1)
   const cursorIndex = Math.min(Math.round(playbackProgress * Math.max(graphLength - 1, 0)), graphLength - 1)
-  const cursorSpeed = selectedRow?.series?.[cursorIndex]?.[1] || 0
+  const cursorIntensity = selectedRow?.series?.[cursorIndex]?.[1] || 0
   const cursorX = (cursorIndex / Math.max(graphLength - 1, 1)) * graphWidth
-  const cursorY = graphHeight - (cursorSpeed / graphMaxSpeed) * (graphHeight - 42) - 18
+  const cursorY = graphHeight - (cursorIntensity / graphMaxIntensity) * (graphHeight - 42) - 18
   const averageIntensity = rows.length
     ? Math.round(rows.reduce((total, row) => total + row.intensity, 0) / rows.length)
     : 0
@@ -1129,12 +1620,12 @@ function SwingIntensityDetail({ rows = [] }) {
         <div>
           <span>Total Swings</span>
           <b>{rows.length}</b>
-          <small>IMU CSV recordings</small>
+          <small>hit_event windows</small>
         </div>
         <div>
           <span>Avg Intensity</span>
           <b>{averageIntensity}<small>/100</small></b>
-          <small>relative swing load</small>
+          <small>avg of {RECEIVER_SWING_WINDOW_ROWS} rows before hit</small>
         </div>
         <div>
           <span>Peak Gyro</span>
@@ -1164,7 +1655,7 @@ function SwingIntensityDetail({ rows = [] }) {
                 <b>{formatCategoryName(row.category)}</b>
                 <em className={row.tone}>{row.level}</em>
                 <strong>{row.intensity}</strong>
-                <small>speed n/a</small>
+                <small>{row.samples} rows · {row.peakAccel.toFixed(2)}g accel</small>
               </button>
             </div>
           ))}
@@ -1193,16 +1684,16 @@ function SwingIntensityDetail({ rows = [] }) {
             </div>
           </div>
 
-          <svg className="speedGraph" viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label="IMU intensity trace">
-            <text className="speedGraphLabel" x="20" y="25">
-              IMU intensity trace : speed n/a
+          <svg className="intensityGraph" viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label="IMU intensity trace">
+            <text className="intensityGraphLabel" x="20" y="25">
+              IMU intensity trace
             </text>
-            <path className="speedGraphLine" d={graphPath} />
-            <line className="speedGraphEndMarker" x1={graphWidth - 13} x2={graphWidth - 13} y1="18" y2={graphHeight - 18} />
+            <path className="intensityGraphLine" d={graphPath} />
+            <line className="intensityGraphEndMarker" x1={graphWidth - 13} x2={graphWidth - 13} y1="18" y2={graphHeight - 18} />
             {isSelectedPlaying && (
               <>
-                <line className="speedGraphCursorLine" x1={cursorX} x2={cursorX} y1="18" y2={graphHeight - 18} />
-                <circle className="speedGraphCursor" cx={cursorX} cy={cursorY} r="7" />
+                <line className="intensityGraphCursorLine" x1={cursorX} x2={cursorX} y1="18" y2={graphHeight - 18} />
+                <circle className="intensityGraphCursor" cx={cursorX} cy={cursorY} r="7" />
               </>
             )}
           </svg>
@@ -1217,12 +1708,8 @@ function SwingIntensityDetail({ rows = [] }) {
 
           <div className="intensityMetrics">
             <div>
-              <span>Peak Speed</span>
-              <b>n/a</b>
-            </div>
-            <div>
-              <span>Avg Speed</span>
-              <b>n/a</b>
+              <span>Intensity</span>
+              <b>{selectedRow.intensity}<small>/100</small></b>
             </div>
             <div>
               <span>Peak Accel</span>
@@ -1278,6 +1765,7 @@ function DashboardSummary({ player, data, intensityRows = [] }) {
   const avgIntensity = intensityRows.length
     ? Math.round(intensityRows.reduce((total, row) => total + row.intensity, 0) / intensityRows.length)
     : 0
+  const peakAccel = intensityRows.reduce((max, row) => Math.max(max, row.peakAccel), 0)
   return (
     <div className="summaryDetail">
       <div className="summaryHero">
@@ -1310,8 +1798,8 @@ function DashboardSummary({ player, data, intensityRows = [] }) {
         </article>
         <article>
           <Zap size={20} />
-          <span>Peak Swing</span>
-          <b>n/a</b>
+          <span>Peak Accel</span>
+          <b>{peakAccel.toFixed(2)}<small>g</small></b>
         </article>
       </div>
 
@@ -1327,7 +1815,7 @@ function DashboardSummary({ player, data, intensityRows = [] }) {
 
       <section>
         <h3>Elbow Analysis</h3>
-        <ElbowDetail />
+        <ElbowDetail armStats={data.armStats} />
       </section>
 
       <section>
@@ -1354,13 +1842,13 @@ function DashboardSummary({ player, data, intensityRows = [] }) {
   )
 }
 
-function getCategories(data) {
+function getCategories(data, intensityRows = []) {
   return [
   {
     id: 'scores',
     kicker: 'Overview',
     title: 'Training Scores',
-    description: 'Power, timing, risk.',
+    description: 'Timing, intensity, risk.',
     icon: Gauge,
     content: <ScoreOverview items={data.scores} />,
   },
@@ -1370,7 +1858,7 @@ function getCategories(data) {
     title: 'Elbow Analysis',
     description: 'Angle and range.',
     icon: ShieldAlert,
-    content: <ElbowDetail />,
+    content: <ElbowDetail armStats={data.armStats} />,
   },
   {
     id: 'sweet',
@@ -1378,7 +1866,7 @@ function getCategories(data) {
     title: 'Sweet Spot',
     description: 'Impact location.',
     icon: Target,
-    content: <SweetSpotDetail />,
+    content: <SweetSpotDetail rows={data.impactRows || []} />,
   },
   {
     id: 'form-analysis',
@@ -1413,20 +1901,12 @@ function getCategories(data) {
     content: <RecentShotsDetail shots={data.recentShots} />,
   },
   {
-    id: 'speed',
-    kicker: 'Gyro',
-    title: 'Swing Speed',
-    description: 'Speed and accel.',
-    icon: Zap,
-    content: <SpeedDetail />,
-  },
-  {
     id: 'swing-intensity',
     kicker: 'IMU',
     title: 'Swing Intensity',
     description: 'IMU intensity rows.',
     icon: Activity,
-    content: <SwingIntensityDetail rows={swingIntensityRows} />,
+    content: <SwingIntensityDetail rows={intensityRows} />,
   },
   {
     id: 'hardware',
@@ -1496,7 +1976,7 @@ const pageMockups = {
       },
       {
         title: 'Analysis Panels',
-        items: ['Elbow form analysis', 'Sweet spot impact dot', 'Power and timing score', 'Gyro speed summary'],
+        items: ['Elbow form analysis', 'Sweet spot impact dot', 'Power and timing score', 'Gyro intensity summary'],
       },
       {
         title: 'Evidence',
@@ -1631,21 +2111,21 @@ const pageMockups = {
   },
 }
 
-function getShotScore(shots, index = 0) {
-  return Number(shots[index]?.[3] || 0)
+function getShotTimingMs(shots, index = 0) {
+  return Number(String(shots[index]?.[3] || '0').replace('ms', '')) || 0
 }
 
 function createVisualizationSets(player, data) {
-  const shotRows = data.recentShots.map(([id, shot, result, power]) => ({
+  const shotRows = data.recentShots.map(([id, shot, result, timing]) => ({
     label: `#${id} ${shot}`,
-    value: Number(power),
+    value: getShotTimingMs([[id, shot, result, timing]]),
     secondary: result,
   }))
   const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
   const consistency = Number(String(data.summaryItems.find(([label]) => label === 'Consistency')?.[1] || '0').replace('%', ''))
-  const powerScore = data.scores.find((item) => item.label === 'Power')?.value || 0
   const timingScore = data.scores.find((item) => item.label === 'Timing')?.value || 0
   const sweetSpotScore = data.scores.find((item) => item.label === 'Sweet Spot')?.value || 0
+  const avgIntensityScore = data.scores.find((item) => item.label === 'Avg Intensity')?.value || 0
   const numericScore = (value) => (Number.isFinite(Number(value)) ? Number(value) : 0)
 
   return {
@@ -1666,12 +2146,12 @@ function createVisualizationSets(player, data) {
     },
     trendCharts: {
       title: `${player.name} Training Trend Visualization`,
-      description: 'Power, timing, sweet spot, and consistency score trend.',
+      description: 'Timing, intensity, sweet spot, and consistency score trend.',
       fileName: `${player.id}-training-trends.csv`,
       rows: [
-        { label: 'Power', value: numericScore(powerScore), secondary: data.scores[0]?.note || '' },
-        { label: 'Timing', value: numericScore(timingScore), secondary: data.scores[1]?.note || '' },
-        { label: 'Sweet Spot', value: numericScore(sweetSpotScore), secondary: data.scores[2]?.note || '' },
+        { label: 'Timing', value: numericScore(timingScore), secondary: data.scores.find((item) => item.label === 'Timing')?.note || '' },
+        { label: 'Avg Intensity', value: numericScore(avgIntensityScore), secondary: data.scores.find((item) => item.label === 'Avg Intensity')?.note || '' },
+        { label: 'Sweet Spot', value: numericScore(sweetSpotScore), secondary: data.scores.find((item) => item.label === 'Sweet Spot')?.note || '' },
         { label: 'Consistency', value: consistency, secondary: 'Session stability' },
       ],
     },
@@ -1681,8 +2161,8 @@ function createVisualizationSets(player, data) {
       fileName: `${player.id}-live-feedback.csv`,
       rows: [
         { label: 'Impact', value: numericScore(sweetSpotScore), secondary: data.recentShots[0]?.[2] || 'Frame Hit' },
-        { label: 'Timing', value: numericScore(timingScore), secondary: data.scores[1]?.note || '' },
-        { label: 'Power', value: getShotScore(data.recentShots), secondary: data.recentShots[0]?.[1] || 'Shot' },
+        { label: 'Timing', value: getShotTimingMs(data.recentShots), secondary: data.scores.find((item) => item.label === 'Timing')?.note || '' },
+        { label: 'Avg Intensity', value: numericScore(avgIntensityScore), secondary: data.recentShots[0]?.[1] || 'Shot' },
         { label: 'Elbow Form', value: 0, secondary: 'No real elbow data' },
       ],
     },
@@ -1710,16 +2190,16 @@ function createRecordLists(player, data) {
   const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
   const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot' || label === 'Best Swing')
   const sessionRows = [
-    [data.bestDate, `${totalShots} shots`, `Consistency ${player.baseline}%`, bestShot?.[1] || 'Best swing', data.timer],
+    [data.bestDate, `${totalShots} shots`, `Consistency ${formatPercentValue(player.baseline)}`, bestShot?.[1] || 'Best swing', data.timer],
   ]
   const playerRows = [player].map((item) => [
     item.name,
     item.level,
     'No hand metadata',
-    `Consistency ${item.id === player.id ? player.baseline : item.baseline}%`,
+    `Consistency ${formatPercentValue(item.id === player.id ? player.baseline : item.baseline)}`,
     item.id === player.id ? 'Active' : 'Inactive',
   ])
-  const shotRows = data.recentShots.map(([id, shot, result, power, time]) => [`#${id}`, shot, result, `Power ${power}`, time])
+  const shotRows = data.recentShots.map(([id, shot, result, timing, time]) => [`#${id}`, shot, result, `Timing ${timing}`, time])
 
   return {
     ...recordLists,
@@ -1730,9 +2210,9 @@ function createRecordLists(player, data) {
       ...recordLists.allData,
       rows: [
         ...shotRows.slice(0, 2).map((row) => ['Shot', row[0], row[1], row[3], row[4]]),
-        ['Session', data.bestDate, `${totalShots} shots`, `Consistency ${player.baseline}%`, data.timer],
+        ['Session', data.bestDate, `${totalShots} shots`, `Consistency ${formatPercentValue(player.baseline)}`, data.timer],
         ['Device', 'Core Sensor', 'Connected', 'Battery 100%', 'Seen now'],
-        ['Player', player.name, player.level, `Consistency ${player.baseline}%`, 'Active'],
+        ['Player', player.name, player.level, `Consistency ${formatPercentValue(player.baseline)}`, 'Active'],
         ['Report', `${player.name} Summary`, 'Ready', 'CSV/PDF', 'Updated today'],
       ],
     },
@@ -1767,7 +2247,7 @@ function createPageMockups(player, data) {
       ...pageMockups['shot-analysis'],
       primary: [
         ['Selected Shot', `#${latestShot[0]} ${latestShot[1]}`, 'Latest shot'],
-        ['Impact Score', `${getShotScore(data.recentShots)}/100`, latestShot[2]],
+        ['Timing', latestShot[3] || NA, latestShot[2]],
         ['Player', player.name, `${player.level} profile`],
       ],
       sections: [
@@ -1783,7 +2263,7 @@ function createPageMockups(player, data) {
       ...pageMockups.reports,
       primary: [
         ['Sessions', '1', 'Available real dataset'],
-        ['Consistency', `${player.baseline}%`, bestShot],
+        ['Consistency', formatPercentValue(player.baseline), bestShot],
         ['Rows', totalShots, data.drill],
       ],
       sections: [
@@ -1822,7 +2302,7 @@ function createPageMockups(player, data) {
       primary: [
         ['Current Player', player.name, player.level],
         ['Dominant Hand', 'n/a', 'No hand metadata yet'],
-        ['Consistency', `${player.baseline}%`, 'Current real dataset'],
+        ['Consistency', formatPercentValue(player.baseline), 'Current real dataset'],
       ],
       records: lists.players,
     },
@@ -1845,7 +2325,7 @@ function createPageMockups(player, data) {
       sections: [
         {
           title: 'Data Source',
-          items: ['swingIntensityRows from IMU CSV', 'WebSocket receiver JSONL for live events', 'No mock API values shown'],
+          items: ['Receiver stream_events.jsonl only', 'No bundled mock rows shown', 'Run receiver.py to refresh dashboard data'],
         },
         {
           title: 'Missing Real Fields',
@@ -2315,7 +2795,7 @@ function OverviewPage({
       <div className="summaryEntry">
         <div className="summaryEntryContent">
           <h2>Session snapshot</h2>
-          <p>Scores, shots, advice, IMU and speed graph in one view.</p>
+          <p>Scores, shots, advice, IMU and intensity graph in one view.</p>
         </div>
         <button type="button" onClick={onSummaryClick}>
           <ChartNoAxesCombined size={18} />
@@ -2560,6 +3040,8 @@ export default function App() {
   const [isPlayerMenuOpen, setIsPlayerMenuOpen] = useState(false)
   const [selectedId, setSelectedId] = useState(null)
   const [selectedVisualizationId, setSelectedVisualizationId] = useState(null)
+  const [receiverEvents, setReceiverEvents] = useState([])
+  const [receiverStatus, setReceiverStatus] = useState('Loading receiver data file...')
   const [isGeminiConnecting, setIsGeminiConnecting] = useState(false)
   const [geminiState, setGeminiState] = useState({
     tone: 'idle',
@@ -2567,9 +3049,54 @@ export default function App() {
     message: 'No Gemini connection yet.',
     reply: '',
   })
-  const selectedPlayer = realPlayers.find((player) => player.id === selectedPlayerId) || realPlayers[0]
-  const currentData = realPlayerDatasets[selectedPlayer.id] || realSessionDataset
-  const categories = getCategories(currentData)
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadReceiverFile() {
+      try {
+        const response = await fetch(`${RECEIVER_SESSION_URL}?t=${Date.now()}`, { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error(`Receiver file not found: ${RECEIVER_SESSION_URL}`)
+        }
+
+        const text = await response.text()
+        const rawEvents = parseReceiverJsonl(text)
+        const events = dedupeReceiverEvents(rawEvents)
+        if (!isMounted) return
+
+        setReceiverEvents(events)
+        setReceiverStatus(events.length
+          ? `${events.length} receiver events loaded${rawEvents.length !== events.length ? ` (${rawEvents.length - events.length} duplicates hidden).` : '.'}`
+          : 'Receiver file is empty.')
+      } catch (error) {
+        if (!isMounted) return
+        setReceiverEvents([])
+        setReceiverStatus(error instanceof Error ? error.message : 'Receiver data file is not available yet.')
+      }
+    }
+
+    loadReceiverFile()
+    const intervalId = window.setInterval(loadReceiverFile, 3000)
+
+    return () => {
+      isMounted = false
+      window.clearInterval(intervalId)
+    }
+  }, [])
+
+  const currentData = useMemo(
+    () => createReceiverSessionDataset(receiverEvents, receiverStatus),
+    [receiverEvents, receiverStatus],
+  )
+  const currentIntensityRows = useMemo(
+    () => createReceiverIntensityRows(receiverEvents),
+    [receiverEvents],
+  )
+  const selectedPlayer = useMemo(() => ({
+    ...realPlayers.find((player) => player.id === selectedPlayerId) || realPlayers[0],
+    baseline: currentData.summaryItems.find(([label]) => label === 'Consistency')?.[1] || NA,
+  }), [currentData, selectedPlayerId])
+  const categories = getCategories(currentData, currentIntensityRows)
   const overviewCategories = useMemo(
     () => categories.filter((item) => !HIDDEN_OVERVIEW_CATEGORIES.has(item.id)),
     [categories],
@@ -2578,8 +3105,8 @@ export default function App() {
     id: 'summary',
     kicker: 'Summary',
     title: 'Session Summary',
-    description: 'All key dashboard outputs in one view, including IMU swing intensity and speed graph.',
-    content: <DashboardSummary player={selectedPlayer} data={currentData} intensityRows={swingIntensityRows} />,
+    description: 'All key dashboard outputs in one view, including IMU swing intensity and acceleration graph.',
+    content: <DashboardSummary player={selectedPlayer} data={currentData} intensityRows={currentIntensityRows} />,
   }
   const selectedCategory = selectedId === 'summary'
     ? summaryCategory
@@ -2613,6 +3140,33 @@ export default function App() {
     })
 
     try {
+      const sessionPayload = {
+        timer: currentData.timer,
+        drill: currentData.drill,
+        targetShots: currentData.targetShots,
+        bestDate: currentData.bestDate,
+        scores: currentData.scores.map(({ label, value, note }) => ({ label, value, note })),
+        formStats: currentData.formStats.map(([label, note, value, tone]) => ({ label, note, value, tone })),
+        summary: currentData.summaryItems.map(([label, value, note]) => ({ label, value, note })),
+        recentShots: currentData.recentShots.map(([id, shot, result, timing, time]) => ({
+          id,
+          shot,
+          result,
+          timing,
+          time,
+        })),
+        coachAdvice: currentData.advice,
+        swingIntensity: currentIntensityRows.slice(0, 12).map((row) => ({
+          id: row.id,
+          category: row.category,
+          shotNo: row.shotNo,
+          peakGyro: row.peakGyro,
+          peakAccel: row.peakAccel,
+          intensity: row.intensity,
+          level: row.level,
+          impactMs: row.impactMs,
+        })),
+      }
       const response = await fetch('/api/gemini-connect', {
         method: 'POST',
         headers: {
@@ -2621,42 +3175,30 @@ export default function App() {
         body: JSON.stringify({
           model: GEMINI_FLASH_MODEL,
           player: selectedPlayer.name,
-          session: {
-            timer: currentData.timer,
-            drill: currentData.drill,
-            targetShots: currentData.targetShots,
-            bestDate: currentData.bestDate,
-            scores: currentData.scores.map(({ label, value, note }) => ({ label, value, note })),
-            formStats: currentData.formStats.map(([label, note, value, tone]) => ({ label, note, value, tone })),
-            summary: currentData.summaryItems.map(([label, value, note]) => ({ label, value, note })),
-            recentShots: currentData.recentShots.map(([id, shot, result, power, time]) => ({
-              id,
-              shot,
-              result,
-              power,
-              time,
-            })),
-            coachAdvice: currentData.advice,
-            swingIntensity: swingIntensityRows.slice(0, 12).map((row) => ({
-              id: row.id,
-              category: row.category,
-              shotNo: row.shotNo,
-              peakSpeed: row.peakSpeed,
-              avgSpeed: row.avgSpeed,
-              peakGyro: row.peakGyro,
-              peakAccel: row.peakAccel,
-              intensity: row.intensity,
-              level: row.level,
-              impactMs: row.impactMs,
-            })),
-          },
+          session: sessionPayload,
           systemPrompt: overviewPromptText,
         }),
       })
-      const payload = await response.json()
+      const responseText = await response.text()
+      let payload = null
+      try {
+        payload = responseText ? JSON.parse(responseText) : null
+      } catch {
+        payload = null
+      }
 
       if (!response.ok || !payload?.ok) {
-        throw new Error(payload?.error || 'Gemini connection failed.')
+        if (response.status === 404) {
+          setGeminiState({
+            tone: 'success',
+            label: 'Local analysis',
+            message: 'Gemini API route is not running in the current Vite dev server.',
+            reply: buildLocalSessionAnalysis(sessionPayload, selectedPlayer.name),
+          })
+          return
+        }
+
+        throw new Error(payload?.error || responseText || `Gemini API returned HTTP ${response.status}.`)
       }
 
       setGeminiState({

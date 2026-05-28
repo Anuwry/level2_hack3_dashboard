@@ -4,3 +4,12 @@ dist
 .env
 .env.local
 npm-debug.log*
+__pycache__/
+**/__pycache__/
+*.pyc
+data/real_sessions/**/stream_events.jsonl
+data/real_sessions/**/incoming_files/*
+!data/real_sessions/**/incoming_files/.gitkeep
+public/data/real_sessions/**/stream_events.jsonl
+public/data/real_sessions/**/incoming_files/*
+!public/data/real_sessions/**/incoming_files/.gitkeep

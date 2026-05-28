@@ -803,8 +803,7 @@ button {
 .modalTitle span,
 .scoreCard span,
 .summaryGrid span,
-.callout span,
-.speedBody span {
+.callout span {
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -1322,22 +1321,6 @@ button {
   display: none;
 }
 
-.elbowStage::after {
-  position: absolute;
-  display: grid;
-  min-width: 86px;
-  min-height: 42px;
-  place-items: center;
-  color: var(--text);
-  font-size: 24px;
-  font-weight: 900;
-  text-transform: uppercase;
-  border: 1px solid rgba(226, 232, 240, 0.16);
-  border-radius: 8px;
-  background: rgba(9, 13, 18, 0.82);
-  content: "n/a";
-}
-
 .elbowArc path {
   fill: none;
   stroke: var(--red);
@@ -1368,6 +1351,50 @@ button {
   display: grid;
   gap: 10px;
   align-content: center;
+}
+
+.armRowList {
+  display: grid;
+  gap: 7px;
+  max-height: 190px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.armRowList button {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap: 3px 8px;
+  align-items: center;
+  min-height: 54px;
+  padding: 9px;
+  color: var(--text);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.68);
+  cursor: pointer;
+}
+
+.armRowList button:hover,
+.armRowList button:focus-visible,
+.armRowList button.active {
+  border-color: rgba(40, 215, 245, 0.5);
+  background: rgba(40, 215, 245, 0.09);
+}
+
+.armRowList span,
+.armRowList small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.armRowList b {
+  font-size: 15px;
+}
+
+.armRowList small {
+  grid-column: 2;
 }
 
 .callout.muted b {
@@ -1802,34 +1829,6 @@ button {
   color: var(--cyan);
 }
 
-.speedBody {
-  display: grid;
-  grid-template-columns: 1fr 170px;
-  gap: 14px;
-  align-items: center;
-}
-
-.speedBody img {
-  width: 100%;
-  max-height: 210px;
-  object-fit: contain;
-  filter: drop-shadow(0 0 12px rgba(40, 215, 245, 0.28));
-}
-
-.speedBody b {
-  display: block;
-  margin: 4px 0 12px;
-  color: var(--cyan);
-  font-size: 28px;
-  line-height: 1;
-}
-
-.speedBody small {
-  margin-left: 4px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
 .greenText {
   color: var(--green) !important;
 }
@@ -2060,7 +2059,7 @@ button {
   font-size: 18px;
 }
 
-.speedGraph {
+.intensityGraph {
   display: block;
   width: 100%;
   min-height: 120px;
@@ -2071,14 +2070,14 @@ button {
   box-shadow: inset 0 0 0 1px rgba(95, 229, 255, 0.04);
 }
 
-.speedGraphLabel {
+.intensityGraphLabel {
   fill: #9eb3cc;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0;
 }
 
-.speedGraphLine {
+.intensityGraphLine {
   fill: none;
   stroke: #5cf2a7;
   stroke-width: 3.2;
@@ -2087,26 +2086,26 @@ button {
   filter: drop-shadow(0 0 5px rgba(92, 242, 167, 0.48));
 }
 
-.speedGraphDot {
+.intensityGraphDot {
   fill: var(--green);
   stroke: #07121d;
   stroke-width: 1.5;
 }
 
-.speedGraphEndMarker {
+.intensityGraphEndMarker {
   stroke: #ff4d69;
   stroke-width: 3;
   stroke-linecap: round;
   filter: drop-shadow(0 0 6px rgba(255, 77, 105, 0.48));
 }
 
-.speedGraphCursorLine {
+.intensityGraphCursorLine {
   stroke: rgba(255, 255, 255, 0.36);
   stroke-width: 1.5;
   stroke-dasharray: 5 7;
 }
 
-.speedGraphCursor {
+.intensityGraphCursor {
   fill: #5cf2a7;
   stroke: #07121d;
   stroke-width: 2.5;
@@ -2667,7 +2666,6 @@ button {
   .formAnalysisDetail,
   .sessionSummaryDetail,
   .graphLayout,
-  .speedBody,
   .intensitySummary,
   .intensityMetrics,
   .summaryQuickStats,
@@ -3679,7 +3677,6 @@ button:focus-visible {
 .scoreCard span,
 .summaryGrid span,
 .callout span,
-.speedBody span,
 .intensitySummary span,
 .intensityMetrics span,
 .intensityGraphHeader span,
@@ -3876,19 +3873,19 @@ button:focus-visible {
   background: rgba(255, 255, 255, 0.04);
 }
 
-.speedGraph {
+.intensityGraph {
   border-color: rgba(90, 167, 255, 0.34);
   border-radius: 14px;
   background: #0c1724;
   box-shadow: none;
 }
 
-.speedGraphLine {
+.intensityGraphLine {
   stroke: #61d99d;
   filter: none;
 }
 
-.speedGraphCursor {
+.intensityGraphCursor {
   fill: #61d99d;
   filter: none;
 }
