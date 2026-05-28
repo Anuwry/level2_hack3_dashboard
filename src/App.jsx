@@ -3,6 +3,7 @@ import {
   Activity,
   BatteryFull,
   BluetoothConnected,
+  BookOpen,
   ChartNoAxesCombined,
   Clock3,
   Dumbbell,
@@ -22,6 +23,7 @@ import {
   X,
   Zap,
 } from 'lucide-react'
+import TrainingFormPage from './TrainingFormPage'
 
 const asset = (name) => `/assets/${name}`
 
@@ -338,14 +340,21 @@ function Sidebar({ activePage, onPageChange }) {
 }
 
 function Header({ activePage, selectedPlayer, playerOptions, isPlayerMenuOpen, onTogglePlayerMenu, onSelectPlayer }) {
-  const pageTitle = navItems.find((item) => item.id === activePage)?.label || 'Overview'
+  const pageTitle = activePage === 'training-form'
+    ? 'Form Training'
+    : navItems.find((item) => item.id === activePage)?.label || 'Overview'
+  const pageSubtitle = activePage === 'overview'
+    ? 'Choose a category to inspect the training data.'
+    : activePage === 'training-form'
+      ? 'Set up your profile and choose a stroke to practice.'
+      : 'Mock-up layout for this section of the dashboard.'
 
   return (
     <header className="header">
       <div>
         <p>Live Training Session</p>
         <h1>{pageTitle === 'Overview' ? 'Badminton AI Coach' : pageTitle}</h1>
-        <span>{pageTitle === 'Overview' ? 'Choose a category to inspect the training data.' : 'Mock-up layout for this section of the dashboard.'}</span>
+        <span>{pageSubtitle}</span>
       </div>
       <div className="headerStatus">
         <div className="connectPill">
@@ -659,6 +668,14 @@ function getCategories(data) {
     description: 'Start training or analyze an uploaded video.',
     icon: Play,
     content: <ActionDetail />,
+  },
+  {
+    id: 'training-form',
+    kicker: 'Learn',
+    title: 'Form Training',
+    description: 'Step-by-step stroke form guide for clear, smash, drop, and more.',
+    icon: BookOpen,
+    navigate: 'training-form',
   },
   ]
 }
@@ -1699,6 +1716,14 @@ export default function App() {
     setSelectedVisualizationId(null)
     setIsPlayerMenuOpen(false)
   }
+  const handleCategoryClick = (id) => {
+    const category = categories.find((c) => c.id === id)
+    if (category?.navigate) {
+      setActivePage(category.navigate)
+    } else {
+      setSelectedId(id)
+    }
+  }
 
   return (
     <div className={`appShell ${hasOverlay ? 'isBlurred' : ''}`}>
@@ -1714,7 +1739,9 @@ export default function App() {
             onSelectPlayer={handleSelectPlayer}
           />
           {activePage === 'overview' ? (
-            <OverviewPage categories={categories} onCategoryClick={setSelectedId} />
+            <OverviewPage categories={categories} onCategoryClick={handleCategoryClick} />
+          ) : activePage === 'training-form' ? (
+            <TrainingFormPage onBack={() => setActivePage('overview')} />
           ) : (
             <MockupPage page={currentMockup} onVisualizationOpen={setSelectedVisualizationId} />
           )}

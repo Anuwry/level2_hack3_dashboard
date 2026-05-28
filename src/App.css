@@ -1788,3 +1788,535 @@ button {
     padding: 14px;
   }
 }
+
+/* ── Training Form Page ──────────────────────────────────── */
+
+.tfPage {
+  position: relative;
+  padding-bottom: 48px;
+}
+
+.tfBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 160ms;
+}
+
+.tfBackBtn:hover {
+  color: var(--cyan);
+}
+
+.tfSteps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 36px;
+}
+
+.tfStepDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--line);
+  transition: background 300ms, width 300ms, border-radius 300ms;
+}
+
+.tfStepDot.done {
+  background: var(--green);
+}
+
+.tfStepDot.current {
+  width: 26px;
+  border-radius: 999px;
+  background: var(--cyan);
+}
+
+.tfStepLine {
+  flex: 1;
+  max-width: 44px;
+  height: 1px;
+  background: var(--line);
+}
+
+.tfStepContent {
+  max-width: 560px;
+  margin: 0 auto;
+  text-align: center;
+  padding: 8px 0 0;
+}
+
+.tfKicker {
+  margin: 0 0 8px;
+  color: var(--cyan);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tfTitle {
+  margin: 0 0 10px;
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.15;
+}
+
+.tfSub {
+  margin: 0 0 32px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.tfChoiceGrid {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.tfChoiceGrid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+.tfChoiceCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  min-width: 130px;
+  padding: 22px 18px;
+  color: var(--text);
+  background: rgba(13, 26, 38, 0.72);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.tfChoiceCard:hover {
+  border-color: rgba(40, 215, 245, 0.45);
+  background: rgba(16, 34, 50, 0.92);
+  transform: translateY(-2px);
+}
+
+.tfChoiceCard b {
+  font-size: 15px;
+}
+
+.choiceSvg {
+  width: 60px;
+  height: 60px;
+}
+
+.tfFormHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.tfProfile {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.tfTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 11px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(13, 26, 38, 0.72);
+}
+
+.tfTag-male {
+  color: var(--cyan);
+  border-color: rgba(40, 215, 245, 0.3);
+}
+
+.tfTag-female {
+  color: #f472b6;
+  border-color: rgba(244, 114, 182, 0.3);
+}
+
+.tfModeBar {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 13px 18px;
+  margin-bottom: 26px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(13, 26, 38, 0.72);
+}
+
+.tfModeGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tfModeGroup span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tfToggleGroup {
+  display: flex;
+}
+
+.tfToggle {
+  padding: 5px 13px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  transition: color 160ms, background 160ms, border-color 160ms;
+}
+
+.tfToggle:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.tfToggle:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+
+.tfToggle.active {
+  color: #071019;
+  background: var(--cyan);
+  border-color: var(--cyan);
+}
+
+.tfModeContext {
+  margin-left: auto;
+  margin: 0 0 0 auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tfSectionHead {
+  margin-bottom: 18px;
+}
+
+.tfSectionTitle {
+  margin: 0 0 5px;
+  font-size: 18px;
+}
+
+.tfSectionSub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.strokeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.strokeCard {
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: rgba(13, 26, 38, 0.72);
+  overflow: hidden;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.strokeCard:hover {
+  transform: translateY(-2px);
+}
+
+.strokeCard-cyan:hover {
+  border-color: rgba(40, 215, 245, 0.5);
+}
+
+.strokeCard-green:hover {
+  border-color: rgba(41, 227, 140, 0.5);
+}
+
+.strokeCard-orange:hover {
+  border-color: rgba(255, 172, 56, 0.5);
+}
+
+.strokeCard-red:hover {
+  border-color: rgba(255, 92, 98, 0.5);
+}
+
+.strokeIllustration {
+  padding: 14px 14px 0;
+  background: rgba(7, 18, 29, 0.55);
+  border-bottom: 1px solid var(--line);
+}
+
+.strokeSvg {
+  display: block;
+  width: 100%;
+  height: 78px;
+}
+
+.strokeInfo {
+  flex: 1;
+  padding: 12px 14px 10px;
+}
+
+.strokeInfo b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.strokeInfo p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.strokeStartBtn {
+  display: block;
+  width: calc(100% - 28px);
+  margin: 0 14px 14px;
+  padding: 8px;
+  color: #071019;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--cyan);
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: opacity 160ms;
+}
+
+.strokeStartBtn:hover {
+  opacity: 0.85;
+}
+
+.devNotice {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 420px;
+  padding: 13px 16px;
+  color: var(--cyan);
+  border: 1px solid rgba(40, 215, 245, 0.3);
+  border-radius: 10px;
+  background: rgba(7, 18, 29, 0.95);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  z-index: 200;
+}
+
+.devNotice > div {
+  flex: 1;
+}
+
+.devNotice b {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 14px;
+}
+
+.devNotice span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.devNotice > button {
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  color: var(--muted);
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 160ms;
+}
+
+.devNotice > button:hover {
+  color: var(--text);
+}
+
+/* ── Stroke Animator modal ───────────────────────────────────────────── */
+
+.animOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 10, 16, 0.88);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.animPanel {
+  background: #0d1e2e;
+  border: 1px solid rgba(40, 215, 245, 0.25);
+  border-radius: 16px;
+  width: min(620px, 94vw);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 0 1px rgba(40,215,245,0.08),
+              0 32px 80px rgba(0,0,0,0.7),
+              0 0 60px rgba(40,215,245,0.04);
+}
+
+.animHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid rgba(40,215,245,0.12);
+  background: rgba(40,215,245,0.04);
+}
+
+.animHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.animTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f2f7fa;
+  text-transform: capitalize;
+}
+
+.animMode {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cyan);
+  background: rgba(40, 215, 245, 0.14);
+  border-radius: 20px;
+  padding: 3px 11px;
+  text-transform: capitalize;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(40,215,245,0.2);
+}
+
+.animClose {
+  display: grid;
+  place-items: center;
+  background: none;
+  border: none;
+  color: #8fa4b2;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  transition: color 0.15s, background 0.15s;
+}
+.animClose:hover {
+  color: #f2f7fa;
+  background: rgba(255,255,255,0.08);
+}
+
+.animBody {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 280px;
+  background: #040e18;
+}
+
+.animCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.animStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #8fa4b2;
+  font-size: 14px;
+  text-align: center;
+  padding: 48px 32px;
+  line-height: 1.7;
+}
+
+.animStatusErr {
+  color: #8fa4b2;
+}
+
+.animStatusErr small {
+  display: block;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
+.animHint {
+  font-size: 11px;
+  color: #4a6070;
+  text-align: center;
+  padding: 10px 20px 14px;
+  margin: 0;
+  border-top: 1px solid rgba(40,215,245,0.08);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1180px) {
+  .strokeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tfChoiceGrid3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .strokeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tfChoiceGrid3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-width: 320px;
+  }
+
+  .tfModeBar {
+    gap: 14px;
+  }
+
+  .tfModeContext {
+    width: 100%;
+    margin-left: 0;
+  }
+}
