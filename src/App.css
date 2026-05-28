@@ -1996,21 +1996,28 @@ button {
 .speedGraph {
   display: block;
   width: 100%;
-  min-height: 210px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(40, 215, 245, 0.06), transparent),
-    rgba(16, 34, 50, 0.32);
+  min-height: 120px;
+  overflow: visible;
+  border: 1px solid #234b7f;
+  border-radius: 22px;
+  background: #06162b;
+  box-shadow: inset 0 0 0 1px rgba(95, 229, 255, 0.04);
+}
+
+.speedGraphLabel {
+  fill: #9eb3cc;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .speedGraphLine {
   fill: none;
-  stroke: var(--cyan);
-  stroke-width: 4;
+  stroke: #5cf2a7;
+  stroke-width: 3.2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 0 8px rgba(40, 215, 245, 0.36));
+  filter: drop-shadow(0 0 5px rgba(92, 242, 167, 0.48));
 }
 
 .speedGraphDot {
@@ -2019,18 +2026,24 @@ button {
   stroke-width: 1.5;
 }
 
+.speedGraphEndMarker {
+  stroke: #ff4d69;
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(255, 77, 105, 0.48));
+}
+
 .speedGraphCursorLine {
-  stroke: #ffcf5a;
-  stroke-width: 2;
-  stroke-dasharray: 7 7;
-  opacity: 0.82;
+  stroke: rgba(255, 255, 255, 0.36);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 7;
 }
 
 .speedGraphCursor {
-  fill: #ffcf5a;
+  fill: #5cf2a7;
   stroke: #07121d;
   stroke-width: 2.5;
-  filter: drop-shadow(0 0 10px rgba(255, 207, 90, 0.7));
+  filter: drop-shadow(0 0 10px rgba(92, 242, 167, 0.7));
 }
 
 .gyroReplayStage {

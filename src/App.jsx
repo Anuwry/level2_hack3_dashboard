@@ -591,19 +591,19 @@ const formatCategoryName = (category) => category
   .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
   .join(' ')
 
-function buildSpeedPath(series, maxSpeed, width = 620, height = 210) {
+function buildSpeedPath(series, maxSpeed, width = 620, height = 120) {
   if (!series.length || !maxSpeed) return ''
 
   return series
     .map(([time, speed], index) => {
       const x = (index / Math.max(series.length - 1, 1)) * width
-      const y = height - (speed / maxSpeed) * (height - 28) - 14
+      const y = height - (speed / maxSpeed) * (height - 42) - 18
       return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
     })
     .join(' ')
 }
 
-function SwingReplayCanvas({ row, isPlaying }) {
+function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
   const canvasRef = useRef(null)
   const frameRef = useRef(0)
   const animationRef = useRef(0)
@@ -624,7 +624,8 @@ function SwingReplayCanvas({ row, isPlaying }) {
   useEffect(() => {
     frameRef.current = 0
     setFrameIndex(0)
-  }, [row?.id])
+    onFrameChange?.(0)
+  }, [onFrameChange, row?.id])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -771,6 +772,7 @@ function SwingReplayCanvas({ row, isPlaying }) {
       if (isPlaying && time - lastTime > 44) {
         frameRef.current = (frameRef.current + 1) % Math.max(samples.length, 1)
         setFrameIndex(frameRef.current)
+        onFrameChange?.(frameRef.current)
         lastTime = time
       }
 
@@ -833,7 +835,7 @@ function SwingReplayCanvas({ row, isPlaying }) {
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(animationRef.current)
     }
-  }, [isPlaying, maxSpeed, row, samples])
+  }, [isPlaying, maxSpeed, onFrameChange, row, samples])
 
   return (
     <div className="gyroReplayStage">
@@ -857,16 +859,20 @@ function SwingReplayCanvas({ row, isPlaying }) {
 function SwingIntensityDetail({ rows = [] }) {
   const [selectedId, setSelectedId] = useState(rows[0]?.id || '')
   const [playingId, setPlayingId] = useState('')
-  const [graphFrameIndex, setGraphFrameIndex] = useState(0)
+  const [playbackFrameIndex, setPlaybackFrameIndex] = useState(0)
   const selectedRow = rows.find((row) => row.id === selectedId) || rows[0]
   const isSelectedPlaying = playingId === selectedRow?.id
-  const maxSpeed = Math.max(...rows.flatMap((row) => row.series.map(([, speed]) => speed)), 1)
-  const graphPath = buildSpeedPath(selectedRow?.series || [], maxSpeed)
+  const graphWidth = 620
+  const graphHeight = 120
+  const graphMaxSpeed = Math.max(...(selectedRow?.series || []).map(([, speed]) => speed), 1)
+  const graphPath = buildSpeedPath(selectedRow?.series || [], graphMaxSpeed, graphWidth, graphHeight)
   const graphLength = selectedRow?.series?.length || 1
-  const cursorIndex = Math.min(graphFrameIndex, graphLength - 1)
+  const replayLength = selectedRow?.replay?.length || graphLength
+  const playbackProgress = playbackFrameIndex / Math.max(replayLength - 1, 1)
+  const cursorIndex = Math.min(Math.round(playbackProgress * Math.max(graphLength - 1, 0)), graphLength - 1)
   const cursorSpeed = selectedRow?.series?.[cursorIndex]?.[1] || 0
-  const cursorX = (cursorIndex / Math.max(graphLength - 1, 1)) * 620
-  const cursorY = 210 - (cursorSpeed / maxSpeed) * (210 - 28) - 14
+  const cursorX = (cursorIndex / Math.max(graphLength - 1, 1)) * graphWidth
+  const cursorY = graphHeight - (cursorSpeed / graphMaxSpeed) * (graphHeight - 42) - 18
   const averageIntensity = rows.length
     ? Math.round(rows.reduce((total, row) => total + row.intensity, 0) / rows.length)
     : 0
@@ -877,16 +883,8 @@ function SwingIntensityDetail({ rows = [] }) {
   }, {})
 
   useEffect(() => {
-    setGraphFrameIndex(0)
-
-    if (!isSelectedPlaying) return undefined
-
-    const timer = window.setInterval(() => {
-      setGraphFrameIndex((index) => (index + 1) % graphLength)
-    }, 44)
-
-    return () => window.clearInterval(timer)
-  }, [graphLength, isSelectedPlaying, selectedRow?.id])
+    setPlaybackFrameIndex(0)
+  }, [selectedRow?.id])
 
   if (!selectedRow) {
     return <div className="emptyState">No IMU swing intensity data available.</div>
@@ -962,25 +960,26 @@ function SwingIntensityDetail({ rows = [] }) {
             </div>
           </div>
 
-          <svg className="speedGraph" viewBox="0 0 620 210" role="img" aria-label="Swing speed graph">
-            {[42, 84, 126, 168].map((y) => <line className="gridLine" x1="0" x2="620" y1={y} y2={y} key={y} />)}
-            {[155, 310, 465].map((x) => <line className="gridLine" x1={x} x2={x} y1="0" y2="210" key={x} />)}
+          <svg className="speedGraph" viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label="Swing speed graph">
+            <text className="speedGraphLabel" x="20" y="25">
+              Speed graph : max {graphMaxSpeed.toFixed(1)} km/h
+            </text>
             <path className="speedGraphLine" d={graphPath} />
-            {selectedRow.series.map(([time, speed], index) => {
-              const x = (index / Math.max(selectedRow.series.length - 1, 1)) * 620
-              const y = 210 - (speed / maxSpeed) * (210 - 28) - 14
-              return <circle className="speedGraphDot" cx={x} cy={y} r="3" key={`${time}-${speed}`} />
-            })}
+            <line className="speedGraphEndMarker" x1={graphWidth - 13} x2={graphWidth - 13} y1="18" y2={graphHeight - 18} />
             {isSelectedPlaying && (
               <>
-                <line className="speedGraphCursorLine" x1={cursorX} x2={cursorX} y1="0" y2="210" />
+                <line className="speedGraphCursorLine" x1={cursorX} x2={cursorX} y1="18" y2={graphHeight - 18} />
                 <circle className="speedGraphCursor" cx={cursorX} cy={cursorY} r="7" />
               </>
             )}
           </svg>
 
           {isSelectedPlaying && (
-            <SwingReplayCanvas row={selectedRow} isPlaying={isSelectedPlaying} />
+            <SwingReplayCanvas
+              row={selectedRow}
+              isPlaying={isSelectedPlaying}
+              onFrameChange={setPlaybackFrameIndex}
+            />
           )}
 
           <div className="intensityMetrics">
