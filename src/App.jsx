@@ -388,6 +388,7 @@ function CategoryCard({ item, onClick }) {
       <div className="categoryIcon"><Icon size={24} /></div>
       <div>
         <b>{item.title}</b>
+        <p>{item.description}</p>
       </div>
     </button>
   )
@@ -1118,7 +1119,7 @@ function getCategories(data) {
     id: 'scores',
     kicker: 'Overview',
     title: 'Training Scores',
-    description: 'Power, timing, sweet spot, and injury risk.',
+    description: 'Power, timing, risk.',
     icon: Gauge,
     content: <ScoreOverview items={data.scores} />,
   },
@@ -1126,7 +1127,7 @@ function getCategories(data) {
     id: 'elbow',
     kicker: 'Form',
     title: 'Elbow Analysis',
-    description: 'Check elbow angle and recommended range.',
+    description: 'Angle and range.',
     icon: ShieldAlert,
     content: <ElbowDetail />,
   },
@@ -1134,7 +1135,7 @@ function getCategories(data) {
     id: 'sweet',
     kicker: 'Impact',
     title: 'Sweet Spot',
-    description: 'Inspect where the shuttle hits the racket.',
+    description: 'Impact location.',
     icon: Target,
     content: <SweetSpotDetail />,
   },
@@ -1142,7 +1143,7 @@ function getCategories(data) {
     id: 'form-analysis',
     kicker: 'Shots',
     title: 'Form Analysis',
-    description: 'Elbow errors, correct shots, and total shot count.',
+    description: 'Errors and totals.',
     icon: Radar,
     content: <FormAnalysisDetail stats={data.formStats} />,
   },
@@ -1150,7 +1151,7 @@ function getCategories(data) {
     id: 'coach',
     kicker: 'Coach',
     title: 'Next Action',
-    description: 'Recommended correction for the next drill.',
+    description: 'Next correction.',
     icon: Sparkles,
     content: <CoachAdvice advice={data.advice} />,
   },
@@ -1158,7 +1159,7 @@ function getCategories(data) {
     id: 'session',
     kicker: 'Session',
     title: 'Session Summary',
-    description: 'Total shots, best shot, calories, power, and consistency.',
+    description: 'Shots and consistency.',
     icon: ChartNoAxesCombined,
     content: <SessionDetail items={data.summaryItems} />,
   },
@@ -1166,7 +1167,7 @@ function getCategories(data) {
     id: 'recent-shots',
     kicker: 'Latest',
     title: 'Recent Shots',
-    description: 'Latest attempts with power, timing, and impact result.',
+    description: 'Latest attempts.',
     icon: Clock3,
     content: <RecentShotsDetail shots={data.recentShots} />,
   },
@@ -1174,7 +1175,7 @@ function getCategories(data) {
     id: 'speed',
     kicker: 'Gyro',
     title: 'Swing Speed',
-    description: 'Speed and acceleration from motion sensors.',
+    description: 'Speed and accel.',
     icon: Zap,
     content: <SpeedDetail />,
   },
@@ -1182,7 +1183,7 @@ function getCategories(data) {
     id: 'swing-intensity',
     kicker: 'IMU',
     title: 'Swing Intensity',
-    description: 'Every IMU recording ranked by swing speed and intensity level.',
+    description: 'IMU intensity rows.',
     icon: Activity,
     content: <SwingIntensityDetail rows={swingIntensityRows} />,
   },
@@ -1190,7 +1191,7 @@ function getCategories(data) {
     id: 'hardware',
     kicker: 'Sensors',
     title: 'Hardware Status',
-    description: 'Connection and battery state for each device.',
+    description: 'Battery and signal.',
     icon: Activity,
     content: <HardwareDetail />,
   },
@@ -1198,7 +1199,7 @@ function getCategories(data) {
     id: 'actions',
     kicker: 'Control',
     title: 'Quick Actions',
-    description: 'Start training or analyze an uploaded video.',
+    description: 'Start or upload.',
     icon: Play,
     content: <ActionDetail />,
   },
@@ -1206,7 +1207,7 @@ function getCategories(data) {
     id: 'training-form',
     kicker: 'Learn',
     title: 'Form Training',
-    description: 'Step-by-step stroke form guide for clear, smash, drop, and more.',
+    description: 'Stroke guide.',
     icon: BookOpen,
     navigate: 'training-form',
   },
@@ -2026,6 +2027,7 @@ function OverviewPage({ categories, onCategoryClick, onSummaryClick }) {
       <div className="summaryEntry">
         <div>
           <h2>Session snapshot</h2>
+          <p>Scores, shots, advice, IMU and speed graph in one view.</p>
         </div>
         <button type="button" onClick={onSummaryClick}>
           <ChartNoAxesCombined size={18} />

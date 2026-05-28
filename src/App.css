@@ -3400,7 +3400,7 @@ button:focus-visible {
 }
 
 .summaryEntry {
-  min-height: 92px;
+  min-height: 108px;
   padding: 20px;
   border-color: rgba(66, 211, 146, 0.18);
   border-radius: 10px;
@@ -3455,14 +3455,24 @@ button:focus-visible {
 }
 
 .categoryCard {
-  min-height: 104px;
+  min-height: 124px;
   padding: 14px;
   border-radius: 10px;
   background: rgba(18, 25, 34, 0.78);
+  align-items: center;
 }
 
 .categoryCard b {
   margin-top: 0;
+}
+
+.categoryCard p {
+  display: -webkit-box;
+  margin-top: 7px;
+  overflow: hidden;
+  color: #aebbc8;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .categoryCard:hover {
