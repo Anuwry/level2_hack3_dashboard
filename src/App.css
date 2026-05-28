@@ -699,6 +699,67 @@ button {
   background: linear-gradient(90deg, var(--cyan), var(--green));
 }
 
+.overviewPage {
+  display: grid;
+  gap: 12px;
+}
+
+.summaryEntry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 118px;
+  padding: 16px;
+  border: 1px solid rgba(40, 215, 245, 0.22);
+  border-radius: 9px;
+  background:
+    linear-gradient(90deg, rgba(40, 215, 245, 0.12), rgba(41, 227, 140, 0.06)),
+    rgba(13, 26, 38, 0.78);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.summaryEntry span {
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.summaryEntry h2,
+.summaryEntry p {
+  margin: 0;
+}
+
+.summaryEntry h2 {
+  margin-top: 4px;
+  font-size: 24px;
+}
+
+.summaryEntry p {
+  max-width: 690px;
+  margin-top: 6px;
+  color: #b9cbd6;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.summaryEntry button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 138px;
+  min-height: 42px;
+  padding: 0 15px;
+  color: #061119;
+  font-weight: 900;
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  cursor: pointer;
+}
+
 .categoryGrid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1256,13 +1317,7 @@ button {
 }
 
 .elbowArc {
-  position: absolute;
-  left: 58%;
-  top: 62%;
-  width: 90px;
-  height: 76px;
-  overflow: visible;
-  transform: translate(-50%, -50%);
+  display: none;
 }
 
 .elbowArc path {
@@ -1369,12 +1424,70 @@ button {
 
 .impactSummary b {
   color: var(--green);
-  font-size: 34px;
+  font-size: 26px;
 }
 
 .impactSummary small {
   color: var(--muted);
   font-size: 14px;
+}
+
+.impactRowList {
+  display: grid;
+  gap: 7px;
+  max-height: 260px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.impactRowList::-webkit-scrollbar {
+  width: 7px;
+}
+
+.impactRowList::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(95, 229, 255, 0.24);
+}
+
+.impactRowList button {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 68px;
+  gap: 8px;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px 9px;
+  color: var(--text);
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.5);
+  cursor: pointer;
+}
+
+.impactRowList button:hover,
+.impactRowList button:focus-visible,
+.impactRowList button.active {
+  border-color: rgba(41, 227, 140, 0.34);
+  background: rgba(41, 227, 140, 0.09);
+}
+
+.impactRowList span,
+.impactRowList small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.impactRowList b {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--green);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.impactRowList small {
+  text-align: right;
 }
 
 .impactSummary p {
@@ -1654,6 +1767,572 @@ button {
   color: var(--green) !important;
 }
 
+.swingIntensity {
+  display: grid;
+  gap: 14px;
+}
+
+.intensitySummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.intensitySummary div,
+.intensityMetrics div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.52);
+}
+
+.intensitySummary span,
+.intensityMetrics span,
+.intensityGraphHeader span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.intensitySummary b,
+.intensityMetrics b {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.intensitySummary small,
+.intensityMetrics small,
+.intensityGraphHeader p {
+  margin: 0;
+  color: #b7c8d4;
+  font-size: 12px;
+}
+
+.intensityLayout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.intensityRows {
+  display: grid;
+  gap: 7px;
+  align-content: start;
+  max-height: 454px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.intensityRows::-webkit-scrollbar {
+  width: 7px;
+}
+
+.intensityRows::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(95, 229, 255, 0.24);
+}
+
+.intensityRowCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.68);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.intensityRowCard:hover,
+.intensityRowCard:focus-within,
+.intensityRowCard.active {
+  border-color: rgba(36, 236, 164, 0.42);
+  background: rgba(36, 236, 164, 0.08);
+}
+
+.intensitySelect {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 48px;
+  grid-template-rows: auto auto;
+  gap: 4px 8px;
+  align-items: center;
+  min-height: 62px;
+  padding: 9px;
+  color: var(--text);
+  text-align: left;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.selectedSwingActions {
+  display: flex;
+  align-items: stretch;
+  gap: 9px;
+}
+
+.selectedPlayButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 88px;
+  min-height: 76px;
+  padding: 0 12px;
+  color: #dff8ff;
+  font-size: 13px;
+  font-weight: 900;
+  border: 1px solid rgba(40, 215, 245, 0.28);
+  border-radius: 8px;
+  background: rgba(40, 215, 245, 0.08);
+  cursor: pointer;
+}
+
+.selectedPlayButton.active {
+  color: #061119;
+  border-color: transparent;
+  background: var(--green);
+}
+
+.intensityRows span,
+.intensityRows small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.intensityRows b {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.intensityRows em {
+  grid-column: 2;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.intensityRows em.green,
+.intensityPill.green {
+  color: var(--green);
+}
+
+.intensityRows em.cyan,
+.intensityPill.cyan {
+  color: var(--cyan);
+}
+
+.intensityRows em.orange,
+.intensityPill.orange {
+  color: var(--orange);
+}
+
+.intensityRows em.red,
+.intensityPill.red {
+  color: var(--red);
+}
+
+.intensityRows strong {
+  grid-column: 3;
+  grid-row: 1;
+  color: var(--green);
+  font-size: 22px;
+  text-align: right;
+}
+
+.intensityRows small {
+  grid-column: 3;
+  grid-row: 2;
+  text-align: right;
+}
+
+.intensityGraphPanel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid rgba(95, 229, 255, 0.13);
+  border-radius: 9px;
+  background: #07121d;
+}
+
+.intensityGraphHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.intensityGraphHeader h3 {
+  margin: 3px 0;
+  font-size: 20px;
+}
+
+.intensityPill {
+  display: grid;
+  min-width: 112px;
+  gap: 2px;
+  padding: 9px 10px;
+  text-align: right;
+  border: 1px solid rgba(95, 229, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.72);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.intensityPill b {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.speedGraph {
+  display: block;
+  width: 100%;
+  min-height: 210px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(40, 215, 245, 0.06), transparent),
+    rgba(16, 34, 50, 0.32);
+}
+
+.speedGraphLine {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(40, 215, 245, 0.36));
+}
+
+.speedGraphDot {
+  fill: var(--green);
+  stroke: #07121d;
+  stroke-width: 1.5;
+}
+
+.speedGraphCursorLine {
+  stroke: #ffcf5a;
+  stroke-width: 2;
+  stroke-dasharray: 7 7;
+  opacity: 0.82;
+}
+
+.speedGraphCursor {
+  fill: #ffcf5a;
+  stroke: #07121d;
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 10px rgba(255, 207, 90, 0.7));
+}
+
+.gyroReplayStage {
+  position: relative;
+  min-height: 500px;
+  overflow: hidden;
+  border: 1px solid #234b7f;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(23, 57, 107, 0.5), transparent 34%),
+    radial-gradient(circle at 82% 16%, rgba(92, 28, 140, 0.24), transparent 28%),
+    linear-gradient(135deg, #06101e, #0a1428 45%, #050912);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.gyroReplayStage canvas {
+  display: block;
+  width: 100%;
+  height: 500px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.gyroReplayStage canvas:active {
+  cursor: grabbing;
+}
+
+.gyroReplayHud {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  width: min(520px, calc(100% - 28px));
+  padding: 12px;
+  border: 1px solid #24476d;
+  border-radius: 16px;
+  background: rgba(12, 24, 48, 0.78);
+  backdrop-filter: blur(12px);
+}
+
+.gyroReplayHud div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #24476d;
+  border-radius: 13px;
+  background: rgba(16, 33, 61, 0.72);
+}
+
+.gyroReplayHud span,
+.gyroReplaySide span {
+  color: #8fa7c7;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.gyroReplayHud b {
+  color: #eaf2ff;
+  font-size: 17px;
+}
+
+.gyroReplaySide {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  display: grid;
+  gap: 8px;
+  width: min(250px, calc(100% - 28px));
+  padding: 13px;
+  border: 1px solid #24476d;
+  border-radius: 16px;
+  background: rgba(12, 24, 48, 0.78);
+  backdrop-filter: blur(12px);
+}
+
+.gyroReplaySide i {
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #142845;
+}
+
+.gyroReplaySide i span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #69f0ae, #ffcf5a, #ff5d8f);
+}
+
+.gyroReplaySide b {
+  color: #eaf2ff;
+  font-size: 15px;
+}
+
+.gyroReplaySide small {
+  color: #a9bedb;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.racketSwingStage {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid rgba(95, 229, 255, 0.13);
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 76% 24%, rgba(40, 215, 245, calc(0.08 + var(--swing-energy) * 0.16)), transparent 28%),
+    linear-gradient(180deg, rgba(16, 34, 50, 0.64), rgba(7, 18, 29, 0.96));
+  perspective: 780px;
+}
+
+.swingTraceSvg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  opacity: 0.9;
+}
+
+.swingTraceLine,
+.swingTraceGlow {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.swingTraceLine {
+  stroke: rgba(40, 215, 245, 0.18);
+  stroke-width: 5;
+}
+
+.swingTraceGlow {
+  stroke: var(--green);
+  stroke-width: 4;
+  stroke-dasharray: 90 620;
+  filter: drop-shadow(0 0 10px rgba(41, 227, 140, 0.62));
+  animation: traceSweep var(--swing-duration) linear infinite;
+}
+
+.swingRacket {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: min(58%, 360px);
+  aspect-ratio: 1.22;
+  transform: translate(-50%, -50%) rotateX(58deg) rotateZ(calc(var(--swing-tilt) * -0.68));
+  transform-origin: 18% 88%;
+  animation: racketSwing var(--swing-duration) ease-in-out infinite alternate;
+  animation-play-state: paused;
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.45));
+}
+
+.racketSwingStage.isPlaying .swingRacket {
+  animation-play-state: running;
+}
+
+.swingRacket img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.swingArc,
+.swingArc.secondary {
+  position: absolute;
+  left: 21%;
+  top: 25%;
+  width: 58%;
+  height: 54%;
+  border: 2px solid rgba(40, 215, 245, calc(0.18 + var(--swing-energy) * 0.32));
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-22deg) skewX(-8deg);
+  opacity: 0.55;
+}
+
+.swingArc.secondary {
+  left: 27%;
+  top: 32%;
+  width: 45%;
+  height: 42%;
+  border-color: rgba(41, 227, 140, calc(0.14 + var(--swing-energy) * 0.24));
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.racketSwingStage.isPlaying .swingArc,
+.racketSwingStage.isPlaying .swingArc.secondary {
+  animation: swingTrail var(--swing-duration) ease-in-out infinite alternate;
+}
+
+.swingImpact {
+  position: absolute;
+  right: 23%;
+  top: 32%;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(41, 227, 140, calc(0.04 + var(--swing-energy) * 0.12));
+  transform: scale(calc(0.7 + var(--swing-energy) * 0.7));
+}
+
+.swingImpact span {
+  position: absolute;
+  inset: 18px;
+  border-radius: inherit;
+  background: var(--green);
+  box-shadow: 0 0 22px rgba(41, 227, 140, 0.75);
+}
+
+.racketSwingStage.isPlaying .swingImpact {
+  animation: impactPulse var(--swing-duration) ease-in-out infinite alternate;
+}
+
+.swingModelHud {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: grid;
+  gap: 4px;
+  max-width: calc(100% - 24px);
+  padding: 9px 10px;
+  border: 1px solid rgba(95, 229, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(7, 18, 29, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.swingModelHud span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.swingModelHud b {
+  color: var(--green);
+  font-size: 15px;
+}
+
+.swingModelHud small {
+  color: #b7c8d4;
+  font-size: 11px;
+}
+
+@keyframes racketSwing {
+  from {
+    transform: translate(-50%, -50%) rotateX(58deg) rotateY(-12deg) rotateZ(calc(var(--swing-tilt) * -0.72));
+  }
+
+  to {
+    transform: translate(-50%, -50%) rotateX(58deg) rotateY(16deg) rotateZ(var(--swing-tilt));
+  }
+}
+
+@keyframes swingTrail {
+  from {
+    opacity: 0.18;
+    transform: rotate(-34deg) skewX(-8deg) scale(0.9);
+  }
+
+  to {
+    opacity: 0.72;
+    transform: rotate(8deg) skewX(-8deg) scale(1.06);
+  }
+}
+
+@keyframes impactPulse {
+  from {
+    opacity: 0.3;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes traceSweep {
+  from {
+    stroke-dashoffset: 620;
+  }
+
+  to {
+    stroke-dashoffset: -90;
+  }
+}
+
+.intensityMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
 .deviceGrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1709,6 +2388,127 @@ button {
   background: rgba(41, 227, 140, 0.1);
 }
 
+.summaryDetail {
+  display: grid;
+  gap: 16px;
+}
+
+.summaryDetail > section {
+  display: grid;
+  gap: 10px;
+}
+
+.summaryDetail > section > h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.summaryHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(95, 229, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(16, 34, 50, 0.52);
+}
+
+.summaryHero span,
+.summaryQuickStats span,
+.summaryAdvice span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.summaryHero h3,
+.summaryHero p {
+  margin: 0;
+}
+
+.summaryHero h3 {
+  margin-top: 3px;
+  font-size: 22px;
+}
+
+.summaryHero p {
+  margin-top: 4px;
+  color: #b7c8d4;
+  font-size: 13px;
+}
+
+.summaryHero > div:last-child {
+  text-align: right;
+}
+
+.summaryHero b {
+  display: block;
+  color: var(--green);
+  font-size: 24px;
+}
+
+.summaryHero small {
+  color: #b7c8d4;
+}
+
+.summaryQuickStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.summaryQuickStats article {
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.52);
+}
+
+.summaryQuickStats svg {
+  color: var(--cyan);
+}
+
+.summaryQuickStats b {
+  font-size: 22px;
+}
+
+.summaryQuickStats small {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.summaryAdvice div {
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(16, 34, 50, 0.52);
+}
+
+.summaryAdvice b {
+  display: block;
+  font-size: 17px;
+}
+
+.summaryAdvice p {
+  margin: 7px 0 0;
+  color: #b7c8d4;
+  line-height: 1.45;
+}
+
+.summaryAdvice ul {
+  display: grid;
+  gap: 7px;
+  margin: 11px 0 0;
+  padding-left: 18px;
+  color: #d7e5ec;
+}
+
 @media (max-width: 1180px) {
   .categoryGrid,
   .mockupStats,
@@ -1716,8 +2516,14 @@ button {
   .recordRow,
   .scoreGrid,
   .graphLayout,
+  .intensitySummary,
+  .summaryQuickStats,
   .deviceGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .intensityLayout {
+    grid-template-columns: 1fr;
   }
 
   .simulationBody {
@@ -1754,6 +2560,16 @@ button {
     grid-template-columns: 1fr;
   }
 
+  .summaryEntry,
+  .summaryHero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summaryHero > div:last-child {
+    text-align: left;
+  }
+
   .simulationHeader {
     display: grid;
   }
@@ -1772,8 +2588,41 @@ button {
   .sessionSummaryDetail,
   .graphLayout,
   .speedBody,
+  .intensitySummary,
+  .intensityMetrics,
+  .summaryQuickStats,
   .deviceGrid {
     grid-template-columns: 1fr;
+  }
+
+  .intensityGraphHeader {
+    display: grid;
+  }
+
+  .intensityPill {
+    text-align: left;
+  }
+
+  .gyroReplayStage {
+    min-height: 560px;
+  }
+
+  .gyroReplayStage canvas {
+    height: 560px;
+  }
+
+  .gyroReplayHud,
+  .gyroReplaySide {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    margin: 10px;
+  }
+
+  .gyroReplayHud {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .simulationMetrics {
