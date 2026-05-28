@@ -330,7 +330,6 @@ function Sidebar({ activePage, onPageChange }) {
             <img src={asset(image)} alt={name} />
             <div>
               <b>{name}</b>
-              <span>Connected</span>
             </div>
             <i />
           </div>
@@ -344,23 +343,15 @@ function Header({ activePage, selectedPlayer, playerOptions, isPlayerMenuOpen, o
   const pageTitle = activePage === 'training-form'
     ? 'Form Training'
     : navItems.find((item) => item.id === activePage)?.label || 'Overview'
-  const pageSubtitle = activePage === 'overview'
-    ? 'Choose a category to inspect the training data.'
-    : activePage === 'training-form'
-      ? 'Set up your profile and choose a stroke to practice.'
-      : 'Mock-up layout for this section of the dashboard.'
 
   return (
     <header className="header">
       <div>
-        <p>Live Training Session</p>
         <h1>{pageTitle === 'Overview' ? 'Badminton AI Coach' : pageTitle}</h1>
-        <span>{pageSubtitle}</span>
       </div>
       <div className="headerStatus">
         <div className="connectPill">
           <BluetoothConnected size={24} />
-          <span>Bluetooth 5.2</span>
           <b>Connected</b>
         </div>
         <div className="playerSwitcher">
@@ -396,7 +387,6 @@ function CategoryCard({ item, onClick }) {
     <button className="categoryCard" type="button" onClick={onClick}>
       <div className="categoryIcon"><Icon size={24} /></div>
       <div>
-        <span>{item.kicker}</span>
         <b>{item.title}</b>
         <p>{item.description}</p>
       </div>
@@ -591,19 +581,19 @@ const formatCategoryName = (category) => category
   .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
   .join(' ')
 
-function buildSpeedPath(series, maxSpeed, width = 620, height = 210) {
+function buildSpeedPath(series, maxSpeed, width = 620, height = 120) {
   if (!series.length || !maxSpeed) return ''
 
   return series
     .map(([time, speed], index) => {
       const x = (index / Math.max(series.length - 1, 1)) * width
-      const y = height - (speed / maxSpeed) * (height - 28) - 14
+      const y = height - (speed / maxSpeed) * (height - 42) - 18
       return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
     })
     .join(' ')
 }
 
-function SwingReplayCanvas({ row, isPlaying }) {
+function SwingReplayCanvas({ row, isPlaying, onFrameChange }) {
   const canvasRef = useRef(null)
   const frameRef = useRef(0)
   const animationRef = useRef(0)
@@ -624,7 +614,8 @@ function SwingReplayCanvas({ row, isPlaying }) {
   useEffect(() => {
     frameRef.current = 0
     setFrameIndex(0)
-  }, [row?.id])
+    onFrameChange?.(0)
+  }, [onFrameChange, row?.id])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -771,6 +762,7 @@ function SwingReplayCanvas({ row, isPlaying }) {
       if (isPlaying && time - lastTime > 44) {
         frameRef.current = (frameRef.current + 1) % Math.max(samples.length, 1)
         setFrameIndex(frameRef.current)
+        onFrameChange?.(frameRef.current)
         lastTime = time
       }
 
@@ -833,7 +825,7 @@ function SwingReplayCanvas({ row, isPlaying }) {
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(animationRef.current)
     }
-  }, [isPlaying, maxSpeed, row, samples])
+  }, [isPlaying, maxSpeed, onFrameChange, row, samples])
 
   return (
     <div className="gyroReplayStage">
@@ -857,16 +849,20 @@ function SwingReplayCanvas({ row, isPlaying }) {
 function SwingIntensityDetail({ rows = [] }) {
   const [selectedId, setSelectedId] = useState(rows[0]?.id || '')
   const [playingId, setPlayingId] = useState('')
-  const [graphFrameIndex, setGraphFrameIndex] = useState(0)
+  const [playbackFrameIndex, setPlaybackFrameIndex] = useState(0)
   const selectedRow = rows.find((row) => row.id === selectedId) || rows[0]
   const isSelectedPlaying = playingId === selectedRow?.id
-  const maxSpeed = Math.max(...rows.flatMap((row) => row.series.map(([, speed]) => speed)), 1)
-  const graphPath = buildSpeedPath(selectedRow?.series || [], maxSpeed)
+  const graphWidth = 620
+  const graphHeight = 120
+  const graphMaxSpeed = Math.max(...(selectedRow?.series || []).map(([, speed]) => speed), 1)
+  const graphPath = buildSpeedPath(selectedRow?.series || [], graphMaxSpeed, graphWidth, graphHeight)
   const graphLength = selectedRow?.series?.length || 1
-  const cursorIndex = Math.min(graphFrameIndex, graphLength - 1)
+  const replayLength = selectedRow?.replay?.length || graphLength
+  const playbackProgress = playbackFrameIndex / Math.max(replayLength - 1, 1)
+  const cursorIndex = Math.min(Math.round(playbackProgress * Math.max(graphLength - 1, 0)), graphLength - 1)
   const cursorSpeed = selectedRow?.series?.[cursorIndex]?.[1] || 0
-  const cursorX = (cursorIndex / Math.max(graphLength - 1, 1)) * 620
-  const cursorY = 210 - (cursorSpeed / maxSpeed) * (210 - 28) - 14
+  const cursorX = (cursorIndex / Math.max(graphLength - 1, 1)) * graphWidth
+  const cursorY = graphHeight - (cursorSpeed / graphMaxSpeed) * (graphHeight - 42) - 18
   const averageIntensity = rows.length
     ? Math.round(rows.reduce((total, row) => total + row.intensity, 0) / rows.length)
     : 0
@@ -877,16 +873,8 @@ function SwingIntensityDetail({ rows = [] }) {
   }, {})
 
   useEffect(() => {
-    setGraphFrameIndex(0)
-
-    if (!isSelectedPlaying) return undefined
-
-    const timer = window.setInterval(() => {
-      setGraphFrameIndex((index) => (index + 1) % graphLength)
-    }, 44)
-
-    return () => window.clearInterval(timer)
-  }, [graphLength, isSelectedPlaying, selectedRow?.id])
+    setPlaybackFrameIndex(0)
+  }, [selectedRow?.id])
 
   if (!selectedRow) {
     return <div className="emptyState">No IMU swing intensity data available.</div>
@@ -962,25 +950,26 @@ function SwingIntensityDetail({ rows = [] }) {
             </div>
           </div>
 
-          <svg className="speedGraph" viewBox="0 0 620 210" role="img" aria-label="Swing speed graph">
-            {[42, 84, 126, 168].map((y) => <line className="gridLine" x1="0" x2="620" y1={y} y2={y} key={y} />)}
-            {[155, 310, 465].map((x) => <line className="gridLine" x1={x} x2={x} y1="0" y2="210" key={x} />)}
+          <svg className="speedGraph" viewBox={`0 0 ${graphWidth} ${graphHeight}`} role="img" aria-label="Swing speed graph">
+            <text className="speedGraphLabel" x="20" y="25">
+              Speed graph : max {graphMaxSpeed.toFixed(1)} km/h
+            </text>
             <path className="speedGraphLine" d={graphPath} />
-            {selectedRow.series.map(([time, speed], index) => {
-              const x = (index / Math.max(selectedRow.series.length - 1, 1)) * 620
-              const y = 210 - (speed / maxSpeed) * (210 - 28) - 14
-              return <circle className="speedGraphDot" cx={x} cy={y} r="3" key={`${time}-${speed}`} />
-            })}
+            <line className="speedGraphEndMarker" x1={graphWidth - 13} x2={graphWidth - 13} y1="18" y2={graphHeight - 18} />
             {isSelectedPlaying && (
               <>
-                <line className="speedGraphCursorLine" x1={cursorX} x2={cursorX} y1="0" y2="210" />
+                <line className="speedGraphCursorLine" x1={cursorX} x2={cursorX} y1="18" y2={graphHeight - 18} />
                 <circle className="speedGraphCursor" cx={cursorX} cy={cursorY} r="7" />
               </>
             )}
           </svg>
 
           {isSelectedPlaying && (
-            <SwingReplayCanvas row={selectedRow} isPlaying={isSelectedPlaying} />
+            <SwingReplayCanvas
+              row={selectedRow}
+              isPlaying={isSelectedPlaying}
+              onFrameChange={setPlaybackFrameIndex}
+            />
           )}
 
           <div className="intensityMetrics">
@@ -1130,7 +1119,7 @@ function getCategories(data) {
     id: 'scores',
     kicker: 'Overview',
     title: 'Training Scores',
-    description: 'Power, timing, sweet spot, and injury risk.',
+    description: 'Power, timing, risk.',
     icon: Gauge,
     content: <ScoreOverview items={data.scores} />,
   },
@@ -1138,7 +1127,7 @@ function getCategories(data) {
     id: 'elbow',
     kicker: 'Form',
     title: 'Elbow Analysis',
-    description: 'Check elbow angle and recommended range.',
+    description: 'Angle and range.',
     icon: ShieldAlert,
     content: <ElbowDetail />,
   },
@@ -1146,7 +1135,7 @@ function getCategories(data) {
     id: 'sweet',
     kicker: 'Impact',
     title: 'Sweet Spot',
-    description: 'Inspect where the shuttle hits the racket.',
+    description: 'Impact location.',
     icon: Target,
     content: <SweetSpotDetail />,
   },
@@ -1154,7 +1143,7 @@ function getCategories(data) {
     id: 'form-analysis',
     kicker: 'Shots',
     title: 'Form Analysis',
-    description: 'Elbow errors, correct shots, and total shot count.',
+    description: 'Errors and totals.',
     icon: Radar,
     content: <FormAnalysisDetail stats={data.formStats} />,
   },
@@ -1162,7 +1151,7 @@ function getCategories(data) {
     id: 'coach',
     kicker: 'Coach',
     title: 'Next Action',
-    description: 'Recommended correction for the next drill.',
+    description: 'Next correction.',
     icon: Sparkles,
     content: <CoachAdvice advice={data.advice} />,
   },
@@ -1170,7 +1159,7 @@ function getCategories(data) {
     id: 'session',
     kicker: 'Session',
     title: 'Session Summary',
-    description: 'Total shots, best shot, calories, power, and consistency.',
+    description: 'Shots and consistency.',
     icon: ChartNoAxesCombined,
     content: <SessionDetail items={data.summaryItems} />,
   },
@@ -1178,7 +1167,7 @@ function getCategories(data) {
     id: 'recent-shots',
     kicker: 'Latest',
     title: 'Recent Shots',
-    description: 'Latest attempts with power, timing, and impact result.',
+    description: 'Latest attempts.',
     icon: Clock3,
     content: <RecentShotsDetail shots={data.recentShots} />,
   },
@@ -1186,7 +1175,7 @@ function getCategories(data) {
     id: 'speed',
     kicker: 'Gyro',
     title: 'Swing Speed',
-    description: 'Speed and acceleration from motion sensors.',
+    description: 'Speed and accel.',
     icon: Zap,
     content: <SpeedDetail />,
   },
@@ -1194,7 +1183,7 @@ function getCategories(data) {
     id: 'swing-intensity',
     kicker: 'IMU',
     title: 'Swing Intensity',
-    description: 'Every IMU recording ranked by swing speed and intensity level.',
+    description: 'IMU intensity rows.',
     icon: Activity,
     content: <SwingIntensityDetail rows={swingIntensityRows} />,
   },
@@ -1202,7 +1191,7 @@ function getCategories(data) {
     id: 'hardware',
     kicker: 'Sensors',
     title: 'Hardware Status',
-    description: 'Connection and battery state for each device.',
+    description: 'Battery and signal.',
     icon: Activity,
     content: <HardwareDetail />,
   },
@@ -1210,7 +1199,7 @@ function getCategories(data) {
     id: 'actions',
     kicker: 'Control',
     title: 'Quick Actions',
-    description: 'Start training or analyze an uploaded video.',
+    description: 'Start or upload.',
     icon: Play,
     content: <ActionDetail />,
   },
@@ -1218,7 +1207,7 @@ function getCategories(data) {
     id: 'training-form',
     kicker: 'Learn',
     title: 'Form Training',
-    description: 'Step-by-step stroke form guide for clear, smash, drop, and more.',
+    description: 'Stroke guide.',
     icon: BookOpen,
     navigate: 'training-form',
   },
@@ -2037,9 +2026,8 @@ function OverviewPage({ categories, onCategoryClick, onSummaryClick }) {
     <section className="overviewPage" aria-label="Dashboard overview">
       <div className="summaryEntry">
         <div>
-          <span>Overview Summary</span>
           <h2>Session snapshot</h2>
-          <p>Open one view with training scores, latest shots, coach advice, IMU swing intensity rows, and the speed graph.</p>
+          <p>Scores, shots, advice, IMU and speed graph in one view.</p>
         </div>
         <button type="button" onClick={onSummaryClick}>
           <ChartNoAxesCombined size={18} />
