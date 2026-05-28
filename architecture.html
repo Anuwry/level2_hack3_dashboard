@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BadmintonIQ — System Architecture</title>
+<style>
+  :root {
+    --bg:      #0a0f1e;
+    --panel:   #0f172a;
+    --panel2:  #1e293b;
+    --line:    #1e293b;
+    --line2:   #334155;
+    --text:    #e2e8f0;
+    --muted:   #64748b;
+    --muted2:  #94a3b8;
+    --cyan:    #22d3ee;
+    --green:   #4ade80;
+    --amber:   #fbbf24;
+    --red:     #f87171;
+    --blue:    #60a5fa;
+    --purple:  #c084fc;
+    --indigo:  #818cf8;
+    --orange:  #fb923c;
+    --teal:    #2dd4bf;
+    --pink:    #f472b6;
+    --mono:    'JetBrains Mono','Fira Code','Consolas',monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter','Segoe UI',sans-serif; font-size: 13px; line-height: 1.5; }
+  code { font-family: var(--mono); font-size: 0.8em; background: #0a0f1e; border: 1px solid #334155; border-radius: 4px; padding: 1px 5px; color: var(--cyan); }
+
+  /* ── Page shell ── */
+  .page { max-width: 1400px; margin: 0 auto; padding: 36px 24px 60px; }
+
+  /* ── Header ── */
+  .header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--line2); flex-wrap: wrap; gap: 12px; }
+  .header-left h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.04em; }
+  .header-left p  { color: var(--muted2); font-size: 0.85rem; margin-top: 4px; }
+  .pill { display:inline-flex; align-items:center; gap:5px; font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; padding:3px 10px; border-radius:20px; }
+  .pill-cyan   { background:#0c2a2e; color:var(--cyan);   border:1px solid #164e63; }
+  .pill-amber  { background:#1c1400; color:var(--amber);  border:1px solid #78350f; }
+  .pill-green  { background:#052e0a; color:var(--green);  border:1px solid #14532d; }
+  .pill-purple { background:#1a0030; color:var(--purple); border:1px solid #3b0764; }
+  .pill-blue   { background:#0a1628; color:var(--blue);   border:1px solid #1e3a5f; }
+  .pill-red    { background:#200606; color:var(--red);    border:1px solid #7f1d1d; }
+  .pill-indigo { background:#1a1040; color:var(--indigo); border:1px solid #312e81; }
+  .pill-orange { background:#1c0d00; color:var(--orange); border:1px solid #7c2d12; }
+
+  /* ── Section ── */
+  .section-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+
+  /* ── Big flow diagram ── */
+  .big-flow { display: grid; grid-template-columns: 1fr 48px 1fr 48px 1fr 48px 1fr; align-items: start; gap: 0; margin-bottom: 36px; }
+  @media (max-width: 900px) { .big-flow { grid-template-columns: 1fr; } .flow-sep { display: none; } }
+
+  .system-box { border-radius: 16px; overflow: hidden; }
+  .system-header { padding: 12px 16px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; display: flex; align-items: center; gap: 8px; }
+  .system-body { padding: 14px 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+
+  .item { border-radius: 8px; padding: 8px 11px; font-size: 0.79rem; border: 1px solid transparent; }
+  .item strong { display: block; font-weight: 700; font-size: 0.78rem; margin-bottom: 1px; }
+  .item span { color: var(--muted2); font-size: 0.74rem; }
+
+  .flow-sep { display: flex; align-items: center; justify-content: center; padding-top: 70px; }
+  .arrow-line { width: 2px; height: 60px; border-right: 2px dashed #334155; position: relative; }
+  .arrow-h { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 0.68rem; text-align: center; line-height: 1.3; }
+  .arrow-chevron { font-size: 1.1rem; color: #475569; }
+
+  /* ── Nano colors ── */
+  .nano .system-header { background: linear-gradient(135deg,#1a0030,#1e293b); color: var(--purple); }
+  .nano .system-body   { background: #0f0a1e; border: 1px solid #3b0764; border-top: 0; border-radius: 0 0 16px 16px; }
+  .nano .item          { background: #1a1040; border-color: #312e81; }
+  .nano .item strong   { color: var(--indigo); }
+
+  /* ── UNO Q colors ── */
+  .unoq .system-header { background: linear-gradient(135deg,#0c2a2e,#1e293b); color: var(--cyan); }
+  .unoq .system-body   { background: #080f12; border: 1px solid #164e63; border-top: 0; border-radius: 0 0 16px 16px; }
+  .unoq .item          { background: #0c1e22; border-color: #155e75; }
+  .unoq .item strong   { color: var(--cyan); }
+
+  /* ── Dashboard colors ── */
+  .dash .system-header { background: linear-gradient(135deg,#052e0a,#1e293b); color: var(--green); }
+  .dash .system-body   { background: #030f05; border: 1px solid #14532d; border-top: 0; border-radius: 0 0 16px 16px; }
+  .dash .item          { background: #071409; border-color: #166534; }
+  .dash .item strong   { color: var(--green); }
+
+  /* ── 3D Pose colors ── */
+  .pose .system-header { background: linear-gradient(135deg,#1c0d00,#1e293b); color: var(--orange); }
+  .pose .system-body   { background: #100800; border: 1px solid #7c2d12; border-top: 0; border-radius: 0 0 16px 16px; }
+  .pose .item          { background: #1c0e03; border-color: #9a3412; }
+  .pose .item strong   { color: var(--orange); }
+
+  /* ── Detail grid ── */
+  .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  @media (max-width: 1100px) { .detail-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px)  { .detail-grid { grid-template-columns: 1fr; } }
+
+  .dcard { border-radius: 14px; overflow: hidden; }
+  .dcard-head { padding: 10px 14px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em; }
+  .dcard-body { padding: 12px 14px; background: var(--panel); border: 1px solid var(--line2); border-top: 0; border-radius: 0 0 14px 14px; }
+  .dcard-row  { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 0.78rem; }
+  .dcard-row:last-child { border-bottom: 0; }
+  .dcard-row .k { color: var(--muted2); }
+  .dcard-row .v { font-weight: 600; font-size: 0.76rem; }
+
+  /* ── Feature vector ── */
+  .fvec { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  @media (max-width: 640px) { .fvec { grid-template-columns: 1fr; } }
+  .fvec-item { background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 10px 12px; }
+  .fvec-item .fnum { font-size: 0.68rem; font-weight: 800; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .fvec-item .fname { font-size: 0.82rem; font-weight: 700; margin: 2px 0; }
+  .fvec-item .fdesc { font-size: 0.73rem; color: var(--muted2); }
+  .fvec-item .fsrc  { font-size: 0.68rem; margin-top: 4px; }
+
+  /* ── Pose pipeline chain ── */
+  .pipe-chain { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: 12px 0; }
+  .pnode { background: var(--panel2); border: 1px solid var(--line2); border-radius: 8px; padding: 5px 10px; font-size: 0.76rem; font-weight: 600; white-space: nowrap; }
+  .parrow { color: #334155; font-size: 0.9rem; }
+
+  /* ── DTW visual ── */
+  .matrix-demo { display: grid; grid-template-columns: repeat(5,28px); grid-template-rows: repeat(5,28px); gap: 2px; }
+  .mc { display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.64rem; font-family: var(--mono); font-weight: 700; }
+
+  /* ── Data flow table ── */
+  .ftable { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+  .ftable th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 6px 10px; border-bottom: 1px solid var(--line2); }
+  .ftable td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .ftable tr:last-child td { border-bottom: 0; }
+
+  /* ── Packet format ── */
+  .packet { background: #030b10; border: 1px solid #164e63; border-radius: 10px; padding: 12px 14px; font-family: var(--mono); font-size: 0.75rem; overflow-x: auto; }
+  .pf { display: flex; flex-wrap: wrap; gap: 4px; }
+  .pf-field { background: #0c1e22; border: 1px solid #155e75; border-radius: 6px; padding: 3px 8px; }
+  .pf-field .pf-name { color: var(--cyan); font-weight: 700; font-size: 0.7rem; }
+  .pf-field .pf-type { color: var(--muted); font-size: 0.65rem; }
+  .pf-sep { color: #334155; display: flex; align-items: center; }
+
+  /* ── Classification logic ── */
+  .rule-box { background: #030b10; border: 1px solid #334155; border-radius: 10px; padding: 12px 14px; font-family: var(--mono); font-size: 0.76rem; line-height: 1.9; }
+  .r-kw   { color: var(--purple); font-weight: 700; }
+  .r-feat { color: var(--blue); }
+  .r-out  { font-weight: 700; }
+  .r-green  { color: var(--green); }
+  .r-amber  { color: var(--amber); }
+  .r-red    { color: var(--red); }
+  .r-cm   { color: #475569; }
+
+  /* ── Divider ── */
+  hr { border: 0; border-top: 1px solid var(--line2); margin: 32px 0; }
+
+  /* ── Score bar ── */
+  .score-bar { height: 6px; border-radius: 3px; margin-top: 4px; }
+
+  /* ── Status row ── */
+  .status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+
+  /* ── Separator line with label ── */
+  .sec-divider { display: flex; align-items: center; gap: 12px; margin: 28px 0 20px; }
+  .sec-divider::before, .sec-divider::after { content: ''; flex: 1; height: 1px; background: var(--line2); }
+  .sec-divider span { color: var(--muted); font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══════════════════════════════════════════ HEADER ══ -->
+  <div class="header">
+    <div class="header-left">
+      <h1>BadmintonIQ — System Architecture</h1>
+      <p>Full-stack overview: racket sensor node → edge hub → 3D pose pipeline → unified dashboard</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+      <span class="pill pill-purple">Nano 33 BLE Sense</span>
+      <span class="pill pill-cyan">Arduino UNO Q</span>
+      <span class="pill pill-orange">3D Pose Pipeline</span>
+      <span class="pill pill-green">React Dashboard</span>
+      <span class="pill pill-indigo">SuperAI Hack3 · 2026</span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ BIG FLOW ══ -->
+  <div class="section-title">End-to-End Data Flow</div>
+
+  <div class="big-flow">
+
+    <!-- NANO -->
+    <div class="system-box nano">
+      <div class="system-header">
+        <span>🎾</span> Nano 33 BLE Sense
+        <span class="pill pill-purple" style="margin-left:auto;font-size:0.62rem">On-Racket</span>
+      </div>
+      <div class="system-body">
+        <div class="item">
+          <strong>LSM9DS1 IMU</strong>
+          <span>3-axis accel ±16 g · 3-axis gyro ±2000 dps · 119 Hz continuous</span>
+        </div>
+        <div class="item">
+          <strong>MP34DT05 Microphone</strong>
+          <span>PDM 16 kHz · 64 dB SNR · 256-sample = 16 ms buffer</span>
+        </div>
+        <div class="item">
+          <strong>On-Device Detection</strong>
+          <span>Audio RMS trigger · 300 ms cooldown · 32 ms capture window</span>
+        </div>
+        <div class="item">
+          <strong>Feature Extraction (M4F)</strong>
+          <span>6 features computed per hit — never raw stream</span>
+        </div>
+        <div class="item">
+          <strong>Output → USB Serial</strong>
+          <span><code>SEQ,T_MS,ACCEL,GYRO,PEAK,CENTROID,DECAY,ZCR</code></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARROW 1 -->
+    <div class="flow-sep">
+      <div class="arrow-h">
+        <div class="arrow-chevron">⟶</div>
+        <div>USB<br>Serial<br>CSV</div>
+      </div>
+    </div>
+
+    <!-- UNO Q -->
+    <div class="system-box unoq">
+      <div class="system-header">
+        <span>🖥️</span> Arduino UNO Q
+        <span class="pill pill-cyan" style="margin-left:auto;font-size:0.62rem">Edge Hub</span>
+      </div>
+      <div class="system-body">
+        <div class="item">
+          <strong>serial_reader.py</strong>
+          <span>Reads packets · validates seq numbers · logs gaps · writes hits_log.csv</span>
+        </div>
+        <div class="item">
+          <strong>classifier.py</strong>
+          <span>Rule-based 3-class: sweet spot / off-center / frame-hit · O(1) lookup</span>
+        </div>
+        <div class="item">
+          <strong>Flask + WebSocket</strong>
+          <span>Serves dashboard to any LAN browser · pushes class + scores in &lt;50 ms</span>
+        </div>
+        <div class="item">
+          <strong>hits_log.csv</strong>
+          <span>Every hit: seq · timestamp · 6 features · class — future ML training data</span>
+        </div>
+        <div class="item">
+          <strong>systemd service</strong>
+          <span>Auto-starts on boot · know boot time before demo (~30 s)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARROW 2 -->
+    <div class="flow-sep">
+      <div class="arrow-h">
+        <div class="arrow-chevron">⟶</div>
+        <div>WebSocket<br>JSON<br>&lt;50 ms</div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="system-box dash">
+      <div class="system-header">
+        <span>📊</span> Live Dashboard
+        <span class="pill pill-green" style="margin-left:auto;font-size:0.62rem">Browser</span>
+      </div>
+      <div class="system-body">
+        <div class="item">
+          <strong>Hit Class Indicator</strong>
+          <span>Green / Yellow / Red live badge · updates per hit</span>
+        </div>
+        <div class="item">
+          <strong>Power &amp; Swing Scores</strong>
+          <span>f5 accel magnitude + f6 gyro magnitude derived scores</span>
+        </div>
+        <div class="item">
+          <strong>Session Stats</strong>
+          <span>Hit count by class · clean-hit ratio · total hits</span>
+        </div>
+        <div class="item">
+          <strong>Session Trend Graph</strong>
+          <span>Sweet spot rate over time — practice improvement visibility</span>
+        </div>
+        <div class="item">
+          <strong>Auto Feedback Cue</strong>
+          <span>Triggers on frame-like or off-center — no manual intervention</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARROW 3 -->
+    <div class="flow-sep">
+      <div class="arrow-h">
+        <div class="arrow-chevron">⟶</div>
+        <div>Video<br>Upload<br>REST</div>
+      </div>
+    </div>
+
+    <!-- 3D POSE PIPELINE -->
+    <div class="system-box pose">
+      <div class="system-header">
+        <span>🦴</span> 3D Pose Pipeline
+        <span class="pill pill-orange" style="margin-left:auto;font-size:0.62rem">React + FastAPI</span>
+      </div>
+      <div class="system-body">
+        <div class="item">
+          <strong>MediaPipe BlazePose</strong>
+          <span>Video → 33 landmarks → 17 joints · Kalman smoothed · 5 ms/frame</span>
+        </div>
+        <div class="item">
+          <strong>Session Storage</strong>
+          <span>keypoints.jsonl per frame · frame_index · timestamp_ms · visibility</span>
+        </div>
+        <div class="item">
+          <strong>Three.js Avatar Replay</strong>
+          <span>GLB avatar · play/pause/scrub · pose comparison split-view</span>
+        </div>
+        <div class="item">
+          <strong>DTW Stroke Matching</strong>
+          <span>Auto-match labels → session frames · event-scoped alignment</span>
+        </div>
+        <div class="item">
+          <strong>Label Library</strong>
+          <strong>Phase Detection</strong>
+          <span>Backswing → Acceleration → Impact → Follow-through</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /big-flow -->
+
+  <!-- ══════════════════════════════ DETAIL CARDS ══ -->
+  <div class="sec-divider"><span>System Detail</span></div>
+
+  <div class="detail-grid">
+
+    <!-- Nano specs -->
+    <div class="dcard">
+      <div class="dcard-head" style="background:linear-gradient(135deg,#1a0030,#1e293b);color:var(--purple)">🎾 Nano 33 BLE Sense — Specs</div>
+      <div class="dcard-body">
+        <div class="dcard-row"><span class="k">CPU</span><span class="v" style="color:var(--indigo)">64 MHz Cortex-M4F + FPU</span></div>
+        <div class="dcard-row"><span class="k">Flash / RAM</span><span class="v">1 MB / 256 KB</span></div>
+        <div class="dcard-row"><span class="k">IMU range</span><span class="v" style="color:var(--indigo)">±16 g · ±2000 dps</span></div>
+        <div class="dcard-row"><span class="k">Mic</span><span class="v">MP34DT05 · 16 kHz · 64 dB</span></div>
+        <div class="dcard-row"><span class="k">I/O voltage</span><span class="v" style="color:var(--red)">3.3 V ONLY — not 5V</span></div>
+        <div class="dcard-row"><span class="k">Radio</span><span class="v">BLE 5 (stretch goal)</span></div>
+        <div class="dcard-row"><span class="k">IMU library</span><span class="v"><code>Arduino_LSM9DS1</code></span></div>
+        <div class="dcard-row"><span class="k">PDM buffer</span><span class="v">256 samples = 16 ms</span></div>
+        <div class="dcard-row"><span class="k">Hit window</span><span class="v">32 ms (2 buffers)</span></div>
+        <div class="dcard-row"><span class="k">Cooldown</span><span class="v">300 ms between hits</span></div>
+        <div class="dcard-row"><span class="k">Mount</span><span class="v">3D print + foam + tape</span></div>
+        <div class="dcard-row"><span class="k">Mag</span><span class="v" style="color:var(--muted)">Disabled — saves current</span></div>
+      </div>
+    </div>
+
+    <!-- UNO Q specs -->
+    <div class="dcard">
+      <div class="dcard-head" style="background:linear-gradient(135deg,#0c2a2e,#1e293b);color:var(--cyan)">🖥️ Arduino UNO Q — Specs</div>
+      <div class="dcard-body">
+        <div class="dcard-row"><span class="k">OS</span><span class="v" style="color:var(--cyan)">Debian Linux</span></div>
+        <div class="dcard-row"><span class="k">MCU</span><span class="v">STM32U585 (real-time I/O)</span></div>
+        <div class="dcard-row"><span class="k">Wi-Fi</span><span class="v">Dual-band Wi-Fi 5</span></div>
+        <div class="dcard-row"><span class="k">BT</span><span class="v">Bluetooth 5.1</span></div>
+        <div class="dcard-row"><span class="k">Storage</span><span class="v">eMMC onboard</span></div>
+        <div class="dcard-row"><span class="k">Runtime</span><span class="v">Python 3 · Flask · WebSocket</span></div>
+        <div class="dcard-row"><span class="k">Boot service</span><span class="v"><code>systemd</code> auto-start</span></div>
+        <div class="dcard-row"><span class="k">Boot time</span><span class="v" style="color:var(--amber)">~30 s — know before demo</span></div>
+        <div class="dcard-row"><span class="k">Transport</span><span class="v">USB Serial primary</span></div>
+        <div class="dcard-row"><span class="k">Latency</span><span class="v">&lt;50 ms hit → browser</span></div>
+        <div class="dcard-row"><span class="k">Log</span><span class="v">hits_log.csv (all sessions)</span></div>
+        <div class="dcard-row"><span class="k">Datasheet</span><span class="v">ABX00162</span></div>
+      </div>
+    </div>
+
+    <!-- Pose pipeline specs -->
+    <div class="dcard">
+      <div class="dcard-head" style="background:linear-gradient(135deg,#1c0d00,#1e293b);color:var(--orange)">🦴 Pose Pipeline — Specs</div>
+      <div class="dcard-body">
+        <div class="dcard-row"><span class="k">Backend</span><span class="v" style="color:var(--orange)">FastAPI + Uvicorn</span></div>
+        <div class="dcard-row"><span class="k">Frontend</span><span class="v">React + Vite + Three.js</span></div>
+        <div class="dcard-row"><span class="k">Pose model</span><span class="v">MediaPipe BlazePose</span></div>
+        <div class="dcard-row"><span class="k">Landmarks</span><span class="v">33 MP → 17 biomechanical</span></div>
+        <div class="dcard-row"><span class="k">Smoothing</span><span class="v">Kalman 6-state (pos+vel)</span></div>
+        <div class="dcard-row"><span class="k">Coords</span><span class="v">World: X→ Y↓ Z→cam</span></div>
+        <div class="dcard-row"><span class="k">Three.js flip</span><span class="v"><code>[x, -y, -z]</code></span></div>
+        <div class="dcard-row"><span class="k">Storage</span><span class="v">keypoints.jsonl per session</span></div>
+        <div class="dcard-row"><span class="k">Threshold</span><span class="v">MATCH_THRESHOLD = 0.78</span></div>
+        <div class="dcard-row"><span class="k">Matching</span><span class="v">DTW + best-any-frame</span></div>
+        <div class="dcard-row"><span class="k">Port</span><span class="v">:8000 backend · :5173 UI</span></div>
+        <div class="dcard-row"><span class="k">Proxy</span><span class="v">Vite /api + /ws → :8000</span></div>
+      </div>
+    </div>
+
+    <!-- Dashboard specs -->
+    <div class="dcard">
+      <div class="dcard-head" style="background:linear-gradient(135deg,#052e0a,#1e293b);color:var(--green)">📊 3D Dashboard — Features</div>
+      <div class="dcard-body">
+        <div class="dcard-row"><span class="k">Avatar</span><span class="v" style="color:var(--green)">GLB model · bone quaternion</span></div>
+        <div class="dcard-row"><span class="k">Compare view</span><span class="v">Split session vs label</span></div>
+        <div class="dcard-row"><span class="k">Sync mode</span><span class="v">Event-scoped DTW</span></div>
+        <div class="dcard-row"><span class="k">Score wave</span><span class="v">Per-frame bar + phase bands</span></div>
+        <div class="dcard-row"><span class="k">Joint scores</span><span class="v">Color-coded 3D skeleton</span></div>
+        <div class="dcard-row"><span class="k">Shoulder viz</span><span class="v">3D rotation angle badge</span></div>
+        <div class="dcard-row"><span class="k">Timeline</span><span class="v">Scrubber + event markers</span></div>
+        <div class="dcard-row"><span class="k">Phase editor</span><span class="v">/labels — manual override</span></div>
+        <div class="dcard-row"><span class="k">Auto-match</span><span class="v">Pose sim per session frame</span></div>
+        <div class="dcard-row"><span class="k">Weights</span><span class="v">RightHand 4× · Arm 3× each</span></div>
+        <div class="dcard-row"><span class="k">Grades</span><span class="v">S/A/B/C (Thai labels)</span></div>
+        <div class="dcard-row"><span class="k">Multi-delete</span><span class="v">Session select → Delete N</span></div>
+      </div>
+    </div>
+
+  </div><!-- /detail-grid -->
+
+  <!-- ══════════════════════════════════ 6 FEATURES ══ -->
+  <div class="sec-divider"><span>6-Feature Vector — Nano → UNO Q Packet</span></div>
+
+  <div style="margin-bottom:12px">
+    <div class="packet" style="margin-bottom:12px">
+      <div style="color:var(--muted);font-size:0.68rem;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.07em">Packet format (CSV over USB Serial)</div>
+      <div class="pf">
+        <div class="pf-field"><div class="pf-name">SEQ</div><div class="pf-type">uint16</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field"><div class="pf-name">T_MS</div><div class="pf-type">uint32</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field" style="border-color:#7c3aed"><div class="pf-name" style="color:var(--indigo)">ACCEL_PEAK</div><div class="pf-type">f5</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field" style="border-color:#7c3aed"><div class="pf-name" style="color:var(--indigo)">GYRO_PEAK</div><div class="pf-type">f6</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field" style="border-color:#0e7490"><div class="pf-name" style="color:var(--cyan)">AUDIO_PEAK</div><div class="pf-type">f1</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field" style="border-color:#0e7490"><div class="pf-name" style="color:var(--cyan)">SPEC_CENTROID</div><div class="pf-type">f2</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field" style="border-color:#0e7490"><div class="pf-name" style="color:var(--cyan)">DECAY_TIME</div><div class="pf-type">f3</div></div>
+        <div class="pf-sep">,</div>
+        <div class="pf-field" style="border-color:#0e7490"><div class="pf-name" style="color:var(--cyan)">ZCR</div><div class="pf-type">f4</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fvec">
+    <div class="fvec-item" style="border-color:#0e7490">
+      <div class="fnum">f1 · Mic</div>
+      <div class="fname" style="color:var(--cyan)">Audio RMS Peak</div>
+      <div class="fdesc">How loud the impact is — raw amplitude of the crack</div>
+    </div>
+    <div class="fvec-item" style="border-color:#0e7490;border-left:3px solid var(--cyan)">
+      <div class="fnum">f2 · Mic ★ primary</div>
+      <div class="fname" style="color:var(--cyan)">Spectral Centroid</div>
+      <div class="fdesc">Brightness of sound. Sweet spot → high centroid (bright crack). Frame hit → low centroid (dull thud).</div>
+    </div>
+    <div class="fvec-item" style="border-color:#0e7490;border-left:3px solid var(--cyan)">
+      <div class="fnum">f3 · Mic ★ primary</div>
+      <div class="fname" style="color:var(--cyan)">Decay Time</div>
+      <div class="fdesc">How long ringing lasts. Sweet spot → short decay (energy into shuttle). Frame → long ringing (energy in frame).</div>
+    </div>
+    <div class="fvec-item" style="border-color:#0e7490">
+      <div class="fnum">f4 · Mic</div>
+      <div class="fname" style="color:var(--cyan)">Zero-Crossing Rate</div>
+      <div class="fdesc">Frequency proxy, cheap on M4F. Secondary noise flag for gym ambient sound.</div>
+    </div>
+    <div class="fvec-item" style="border-color:#4b21a8;border-left:3px solid var(--indigo)">
+      <div class="fnum">f5 · IMU</div>
+      <div class="fname" style="color:var(--indigo)">Accel Magnitude Peak</div>
+      <div class="fdesc">Power transfer at contact. √(ax²+ay²+az²) — rotation-invariant. Set ±16 g range (smashes exceed 8 g).</div>
+    </div>
+    <div class="fvec-item" style="border-color:#4b21a8;border-left:3px solid var(--indigo)">
+      <div class="fnum">f6 · IMU</div>
+      <div class="fname" style="color:var(--indigo)">Gyro Magnitude Peak</div>
+      <div class="fdesc">Wrist snap and swing rotation quality. √(gx²+gy²+gz²) — separates a clean contact with weak swing from strong swing with bad contact.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ CLASSIFIER ══ -->
+  <div class="sec-divider"><span>3-Class Rule Classifier (UNO Q · classifier.py)</span></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <div class="rule-box">
+<span class="r-cm"># Explainable rule logic — constants tuned on court</span>
+<span class="r-kw">IF</span>   <span class="r-feat">f3</span> (decay) &gt; DECAY_LONG   <span class="r-kw">AND</span>   <span class="r-feat">f2</span> (centroid) &lt; CENT_LOW:
+     → <span class="r-red r-out">FRAME-LIKE HIT</span>
+     <span class="r-cm">dull, long ringing = energy trapped in racket frame</span>
+
+<span class="r-kw">ELIF</span> <span class="r-feat">f2</span> (centroid) &gt; CENT_HIGH   <span class="r-kw">AND</span>
+     <span class="r-feat">f3</span> (decay)  &lt; DECAY_SHORT  <span class="r-kw">AND</span>
+     <span class="r-feat">f5</span> (accel)  &gt; ACCEL_MIN:
+     → <span class="r-green r-out">SWEET SPOT</span>
+     <span class="r-cm">bright, clean, strong transfer = energy into shuttle</span>
+
+<span class="r-kw">ELSE</span>:
+     → <span class="r-amber r-out">OFF SWEET SPOT</span>
+     <span class="r-cm">intermediate — partial energy transfer</span>
+      </div>
+    </div>
+    <div>
+      <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:14px;height:100%">
+        <div class="section-title" style="margin-bottom:12px">Multi-Sensor Insight — Why Both?</div>
+        <table class="ftable">
+          <tr><th>State</th><th>f2 centroid</th><th>f3 decay</th><th>f5 accel</th></tr>
+          <tr>
+            <td style="color:var(--green);font-weight:700">Sweet Spot</td>
+            <td style="color:var(--green)">High</td>
+            <td style="color:var(--green)">Short</td>
+            <td style="color:var(--green)">High</td>
+          </tr>
+          <tr>
+            <td style="color:var(--amber);font-weight:700">Off Center</td>
+            <td style="color:var(--amber)">Medium</td>
+            <td style="color:var(--amber)">Medium</td>
+            <td style="color:var(--amber)">Medium</td>
+          </tr>
+          <tr>
+            <td style="color:var(--red);font-weight:700">Frame Hit</td>
+            <td style="color:var(--red)">Low</td>
+            <td style="color:var(--red)">Long</td>
+            <td style="color:var(--red)">Low</td>
+          </tr>
+          <tr>
+            <td style="color:var(--blue);font-weight:600">Weak swing<br>clean contact</td>
+            <td style="color:var(--blue)">High</td>
+            <td style="color:var(--blue)">Short</td>
+            <td style="color:var(--red)">Low ←</td>
+          </tr>
+          <tr>
+            <td style="color:var(--blue);font-weight:600">Strong swing<br>frame hit</td>
+            <td style="color:var(--red)">Low ←</td>
+            <td style="color:var(--red)">Long ←</td>
+            <td style="color:var(--blue)">High</td>
+          </tr>
+        </table>
+        <p style="font-size:0.72rem;color:var(--muted);margin-top:10px">No single-sensor system can distinguish weak-swing-clean-contact from strong-swing-frame-hit. Fusion of audio + IMU is the core differentiator.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ 3D POSE DEEP DIVE ══ -->
+  <div class="sec-divider"><span>3D Pose Pipeline — Deep Dive</span></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+
+    <!-- Pose chain -->
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px">
+      <div class="section-title" style="margin-bottom:10px">Processing Chain</div>
+      <div class="pipe-chain">
+        <div class="pnode" style="border-color:#7c2d12;color:var(--orange)">📹 Video</div>
+        <span class="parrow">→</span>
+        <div class="pnode">OpenCV frames</div>
+        <span class="parrow">→</span>
+        <div class="pnode" style="border-color:#7c2d12;color:var(--orange)">MediaPipe BlazePose</div>
+        <span class="parrow">→</span>
+        <div class="pnode">33 landmarks</div>
+        <span class="parrow">→</span>
+        <div class="pnode" style="border-color:#7c2d12;color:var(--orange)">17-joint map</div>
+        <span class="parrow">→</span>
+        <div class="pnode">Kalman filter</div>
+        <span class="parrow">→</span>
+        <div class="pnode" style="border-color:#155e75;color:var(--cyan)">keypoints.jsonl</div>
+        <span class="parrow">→</span>
+        <div class="pnode" style="border-color:#166534;color:var(--green)">Three.js Avatar</div>
+      </div>
+
+      <div style="margin-top:16px">
+        <div class="section-title" style="margin-bottom:8px">17 Biomechanical Joints</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">Hips</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">Spine1</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">Spine2</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">Neck</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">Head</span>
+          <span style="background:#1a1040;border:1px solid #312e81;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono);color:var(--indigo)">RightArm</span>
+          <span style="background:#1a1040;border:1px solid #312e81;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono);color:var(--indigo)">RightForeArm</span>
+          <span style="background:#200020;border:1px solid #7e22ce;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono);color:#e879f9">RightHand ×4</span>
+          <span style="background:#0c1e22;border:1px solid #155e75;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono);color:var(--cyan)">LeftArm</span>
+          <span style="background:#0c1e22;border:1px solid #155e75;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono);color:var(--cyan)">LeftForeArm</span>
+          <span style="background:#0c1e22;border:1px solid #155e75;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono);color:var(--cyan)">LeftHand</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">RightUpLeg</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">RightLeg</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">RightFoot</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">LeftUpLeg</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">LeftLeg</span>
+          <span style="background:#0f172a;border:1px solid #334155;border-radius:5px;padding:2px 7px;font-size:0.7rem;font-family:var(--mono)">LeftFoot</span>
+        </div>
+        <p style="font-size:0.71rem;color:var(--muted);margin-top:8px">Hips = 0 weight (always [0,0,0] after normalization). Spine1 = 0 weight (near-origin). RightHand = 4× weight (most critical for stroke technique).</p>
+      </div>
+    </div>
+
+    <!-- DTW + Similarity -->
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px">
+      <div class="section-title" style="margin-bottom:10px">Pose Matching Algorithms</div>
+
+      <div style="background:#080f12;border:1px solid #164e63;border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.76rem">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:6px">1. normalizePose(kp)</div>
+        <div style="color:var(--muted2)">Center at Hips=[0,0,0]. Scale = distance(Hips→Neck). Result: body-size and camera-distance independent coordinates.</div>
+      </div>
+
+      <div style="background:#080f12;border:1px solid #164e63;border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.76rem">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:6px">2. poseSimilarity(a, b, weights)</div>
+        <div style="color:var(--muted2)">Both pre-normalized. Returns <code>1 / (1 + Σ(dist×w)/Σ(w))</code>. Range 0–1. Stroke-specific weights: RightHand=4×, Arm=3×, Hips/Spine1=0.</div>
+      </div>
+
+      <div style="background:#080f12;border:1px solid #164e63;border-radius:10px;padding:12px;margin-bottom:12px;font-size:0.76rem">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:6px">3. matchLabelsToFrames — Best-Any-Frame</div>
+        <div style="color:var(--muted2)">Each session frame → score vs ALL label poses → take best. Speed-invariant matching. Group consecutive hits → event centered on peak-score frame.</div>
+      </div>
+
+      <div style="background:#080f12;border:1px solid #164e63;border-radius:10px;padding:12px;font-size:0.76rem">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:6px">4. computeStrokeAlignment — DTW</div>
+        <div style="color:var(--muted2)">M×N cost matrix: <code>dtw[i][j] = (1−sim) + min(diag, up, left)</code>. Traceback → monotonic path → <code>sessionToLabel</code> Map (O(1) lookup). Prefers JS normalization over Python 5dp-rounded sequence for bit-exact self-match.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Phase detection -->
+  <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;margin-bottom:16px">
+    <div class="section-title" style="margin-bottom:12px">Stroke Phase Detection (strokePhaseDetector.js)</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:6px 14px;font-size:0.76rem;font-weight:600;color:#94a3b8">Preparation</div>
+      <span style="color:#334155">→</span>
+      <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:8px;padding:6px 14px;font-size:0.76rem;font-weight:600;color:var(--blue)">Backswing</div>
+      <span style="color:#334155">→</span>
+      <div style="background:#1c1400;border:1px solid #78350f;border-radius:8px;padding:6px 14px;font-size:0.76rem;font-weight:600;color:var(--amber)">Acceleration</div>
+      <span style="color:#334155">→</span>
+      <div style="background:#200606;border:1px solid #7f1d1d;border-radius:8px;padding:6px 14px;font-size:0.76rem;font-weight:600;color:var(--red)">Impact ★</div>
+      <span style="color:#334155">→</span>
+      <div style="background:#052e0a;border:1px solid #14532d;border-radius:8px;padding:6px 14px;font-size:0.76rem;font-weight:600;color:var(--green)">Follow-Through</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-size:0.75rem">
+      <div style="background:#0a0f1e;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+        <div style="color:var(--red);font-weight:700;margin-bottom:3px">Impact frame</div>
+        <div style="color:var(--muted2)">= max wrist velocity (frame-to-frame Euclidean distance of RightHand)</div>
+      </div>
+      <div style="background:#0a0f1e;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+        <div style="color:var(--blue);font-weight:700;margin-bottom:3px">Backswing Peak</div>
+        <div style="color:var(--muted2)">= min elbow angle before impact (arm most bent — angle at RightForeArm joint)</div>
+      </div>
+      <div style="background:#0a0f1e;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+        <div style="color:var(--blue);font-weight:700;margin-bottom:3px">Backswing Start</div>
+        <div style="color:var(--muted2)">= last local max of elbow angle before backswing peak (arm starts to fold)</div>
+      </div>
+      <div style="background:#0a0f1e;border:1px solid #334155;border-radius:8px;padding:8px 10px">
+        <div style="color:var(--green);font-weight:700;margin-bottom:3px">Follow-Through End</div>
+        <div style="color:var(--muted2)">= first frame after impact where velocity &lt; 20% of max velocity</div>
+      </div>
+    </div>
+    <p style="font-size:0.72rem;color:var(--muted);margin-top:8px">Both signals Gaussian-smoothed (w=2) before detection. No hardcoded frame counts — purely signal-driven, works at any FPS.</p>
+  </div>
+
+  <!-- ══════════════════════════════════════ KEY FILES ══ -->
+  <div class="sec-divider"><span>Key Source Files</span></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <div class="section-title" style="margin-bottom:8px">Racket Sensor (Hack3/)</div>
+      <table class="ftable">
+        <tr><th>File</th><th>Role</th></tr>
+        <tr><td><code>serial_reader.py</code></td><td style="color:var(--muted2)">Read packets, validate seq, write CSV</td></tr>
+        <tr><td><code>classifier.py</code></td><td style="color:var(--muted2)">Rule logic, tunable constants</td></tr>
+        <tr><td><code>dashboard.py</code></td><td style="color:var(--muted2)">Flask + WebSocket server</td></tr>
+        <tr><td><code>hits_log.csv</code></td><td style="color:var(--muted2)">All hits — future ML training</td></tr>
+        <tr><td><code>nano_firmware.ino</code></td><td style="color:var(--muted2)">IMU + PDM + feature extraction + Serial</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="section-title" style="margin-bottom:8px">3D Pose Pipeline (3d-pose/)</div>
+      <table class="ftable">
+        <tr><th>File</th><th>Role</th></tr>
+        <tr><td><code>backend/main.py</code></td><td style="color:var(--muted2)">FastAPI: upload, WebSocket, sessions, labels</td></tr>
+        <tr><td><code>backend/app/pose/extractor.py</code></td><td style="color:var(--muted2)">MediaPipe → 17-joint + Kalman</td></tr>
+        <tr><td><code>frontend/src/lib/poseSimilarity.js</code></td><td style="color:var(--muted2)">normalize, similarity, DTW, phase weights</td></tr>
+        <tr><td><code>frontend/src/lib/strokePhaseDetector.js</code></td><td style="color:var(--muted2)">Phase segmentation from pose signals</td></tr>
+        <tr><td><code>frontend/src/pages/SessionPage.jsx</code></td><td style="color:var(--muted2)">Replay + compare mode + auto-match</td></tr>
+        <tr><td><code>frontend/src/pages/LabelEditorPage.jsx</code></td><td style="color:var(--muted2)">Phase editor + label management</td></tr>
+        <tr><td><code>frontend/src/components/AvatarViewer.jsx</code></td><td style="color:var(--muted2)">Three.js GLB avatar + bone animation</td></tr>
+        <tr><td><code>frontend/src/components/SkeletonViewer3D.jsx</code></td><td style="color:var(--muted2)">3D skeleton + joint score colors + tooltip</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ RISKS ══ -->
+  <div class="sec-divider"><span>Critical Risks &amp; Mitigations</span></div>
+
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+    <div style="background:#200606;border:1px solid #7f1d1d;border-radius:10px;padding:12px 14px;font-size:0.77rem">
+      <div style="color:var(--red);font-weight:700;margin-bottom:4px">⚠ 3.3V I/O — Nano NOT 5V tolerant</div>
+      <div style="color:var(--muted2)">All connections verified 3.3V. No piezo. No direct 5V signal. Permanent damage if violated.</div>
+    </div>
+    <div style="background:#1c1400;border:1px solid #78350f;border-radius:10px;padding:12px 14px;font-size:0.77rem">
+      <div style="color:var(--amber);font-weight:700;margin-bottom:4px">⚠ Mount shift → invalid IMU data</div>
+      <div style="color:var(--muted2)">Foam lining + athletic tape. Re-test after every remount. Any looseness measures mount vibration, not racket motion.</div>
+    </div>
+    <div style="background:#1c1400;border:1px solid #78350f;border-radius:10px;padding:12px 14px;font-size:0.77rem">
+      <div style="color:var(--amber);font-weight:700;margin-bottom:4px">⚠ BLE is stretch goal only</div>
+      <div style="color:var(--muted2)">USB Serial primary. BLE attempted only after USB Serial demo is stable end-to-end. BLE is never a dependency.</div>
+    </div>
+    <div style="background:#1c1400;border:1px solid #78350f;border-radius:10px;padding:12px 14px;font-size:0.77rem">
+      <div style="color:var(--amber);font-weight:700;margin-bottom:4px">⚠ Thresholds not yet tuned</div>
+      <div style="color:var(--muted2)">Collect 180+ labeled hits on court first. Tune constants in classifier.py. Never tune at desk.</div>
+    </div>
+    <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:10px;padding:12px 14px;font-size:0.77rem">
+      <div style="color:var(--blue);font-weight:700;margin-bottom:4px">ℹ Pose Z-depth less accurate than X,Y</div>
+      <div style="color:var(--muted2)">MediaPipe infers depth from 2D priors — can jump 10–15 cm during fast strokes. Kalman filter smooths this. Use normalized body-relative coords for scoring.</div>
+    </div>
+    <div style="background:#0a1628;border:1px solid #1e3a5f;border-radius:10px;padding:12px 14px;font-size:0.77rem">
+      <div style="color:var(--blue);font-weight:700;margin-bottom:4px">ℹ UNO Q boot ~30 s</div>
+      <div style="color:var(--muted2)">Dashboard auto-starts as systemd service. Know exact boot time before demo. Prepare graceful "booting…" state on dashboard.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ RUN COMMANDS ══ -->
+  <div class="sec-divider"><span>Run Commands</span></div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px">
+      <div class="section-title" style="color:var(--purple);margin-bottom:8px">Nano Firmware</div>
+      <div style="font-family:var(--mono);font-size:0.74rem;color:var(--muted2);line-height:2">Arduino IDE → Board: Nano 33 BLE Sense<br>Library: <code>Arduino_LSM9DS1</code><br>Library: <code>PDM</code><br>Upload → Serial Monitor 115200</div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px">
+      <div class="section-title" style="color:var(--cyan);margin-bottom:8px">UNO Q Hub</div>
+      <div style="font-family:var(--mono);font-size:0.74rem;color:var(--muted2);line-height:2">
+        <code>python serial_reader.py</code><br>
+        <code>python dashboard.py</code><br>
+        Browser: <code>http://&lt;unq-ip&gt;:5000</code>
+      </div>
+    </div>
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px">
+      <div class="section-title" style="color:var(--orange);margin-bottom:8px">3D Pose Pipeline</div>
+      <div style="font-family:var(--mono);font-size:0.74rem;color:var(--muted2);line-height:2">
+        <code>cd 3d-pose/backend</code><br>
+        <code>uvicorn main:app --host 0.0.0.0 --port 8000 --reload</code><br>
+        <code>cd 3d-pose/frontend && npm run dev</code><br>
+        Browser: <code>http://localhost:5173</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════ FOOTER ══ -->
+  <hr>
+  <div style="text-align:center;color:var(--muted);font-size:0.75rem;padding:16px 0">
+    BadmintonIQ · SuperAI Hack3 · 2026 · <span style="font-family:var(--mono);font-size:0.7rem">architecture.html</span>
+  </div>
+
+</div>
+</body>
+</html>

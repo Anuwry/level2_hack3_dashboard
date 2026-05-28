@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BadmintonIQ — Framework Overview</title>
+<style>
+  :root {
+    --bg:       #0f172a;
+    --panel:    #1e293b;
+    --panel2:   #162032;
+    --line:     #334155;
+    --text:     #e2e8f0;
+    --muted:    #94a3b8;
+    --indigo:   #6366f1;
+    --cyan:     #22d3ee;
+    --green:    #4ade80;
+    --amber:    #fbbf24;
+    --red:      #f87171;
+    --blue:     #60a5fa;
+    --purple:   #c084fc;
+    --teal:     #2dd4bf;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 14px; line-height: 1.6; }
+  a { color: var(--cyan); text-decoration: none; }
+
+  /* Layout */
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.04em; }
+  h2 { font-size: 1.25rem; font-weight: 700; color: var(--cyan); letter-spacing: -0.02em; margin-bottom: 16px; }
+  h3 { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 10px; }
+  p  { color: var(--muted); }
+  code { font-family: var(--font-mono); font-size: 0.82em; background: #0f172a; border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; color: var(--cyan); }
+  pre { font-family: var(--font-mono); font-size: 0.8em; background: #0a0f1e; border: 1px solid var(--line); border-radius: 10px; padding: 16px; overflow-x: auto; color: #c4d0e8; line-height: 1.7; }
+  .kw  { color: var(--purple); }
+  .fn  { color: var(--blue); }
+  .str { color: var(--green); }
+  .cm  { color: #475569; }
+  .num { color: var(--amber); }
+
+  section { margin-bottom: 56px; }
+
+  /* Cards */
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+  .card-grid { display: grid; gap: 14px; }
+  .card-grid.cols2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid.cols3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.cols4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 768px) { .card-grid.cols2, .card-grid.cols3, .card-grid.cols4 { grid-template-columns: 1fr; } }
+
+  /* Badges */
+  .badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 8px; border-radius: 20px; }
+  .badge-indigo  { background: #312e81; color: var(--indigo); }
+  .badge-cyan    { background: #164e63; color: var(--cyan); }
+  .badge-green   { background: #14532d; color: var(--green); }
+  .badge-amber   { background: #78350f; color: var(--amber); }
+  .badge-red     { background: #7f1d1d; color: var(--red); }
+  .badge-purple  { background: #3b0764; color: var(--purple); }
+
+  /* Hero */
+  .hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 32px; padding: 32px 0 48px; border-bottom: 1px solid var(--line); margin-bottom: 48px; flex-wrap: wrap; }
+  .hero-left { flex: 1; min-width: 260px; }
+  .hero-subtitle { font-size: 1rem; color: var(--muted); margin-top: 8px; }
+  .hero-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .stack-pill { display: flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; font-weight: 600; }
+  .stack-pill .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Architecture flow */
+  .flow { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding-bottom: 4px; }
+  .flow-node { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; min-width: 140px; flex-shrink: 0; }
+  .flow-node .label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-bottom: 4px; }
+  .flow-node .value { font-size: 0.88rem; font-weight: 600; color: var(--text); }
+  .flow-arrow { display: flex; align-items: center; padding: 0 6px; color: var(--line); font-size: 1.3rem; flex-shrink: 0; }
+
+  /* File table */
+  .file-table { width: 100%; border-collapse: collapse; }
+  .file-table th { text-align: left; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 6px 12px; border-bottom: 1px solid var(--line); }
+  .file-table td { padding: 8px 12px; border-bottom: 1px solid #1e293b; vertical-align: top; font-size: 0.84rem; }
+  .file-table tr:last-child td { border-bottom: none; }
+  .file-table td:first-child { font-family: var(--font-mono); font-size: 0.78rem; color: var(--cyan); white-space: nowrap; }
+  .file-table td:last-child { color: var(--muted); }
+
+  /* Algorithm box */
+  .algo { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 12px; }
+  .algo-title { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 6px; display: flex; align-items: center; gap-8; gap: 8px; }
+  .algo-body { color: var(--muted); font-size: 0.84rem; line-height: 1.7; }
+  .algo-body li { margin-left: 16px; margin-bottom: 3px; }
+
+  /* Weight table */
+  .weight-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .weight-item { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+  .weight-item .jname { font-size: 0.8rem; color: var(--text); }
+  .weight-item .jw { font-family: var(--font-mono); font-size: 0.85rem; font-weight: 700; }
+  .weight-item.w0  .jw { color: #475569; }
+  .weight-item.w1  .jw { color: var(--muted); }
+  .weight-item.w2  .jw { color: var(--amber); }
+  .weight-item.w3  .jw { color: var(--indigo); }
+  .weight-item.w4  .jw { color: var(--green); }
+
+  /* Phase strip */
+  .phase-strip { display: flex; height: 32px; border-radius: 8px; overflow: hidden; gap: 2px; }
+  .phase-seg { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: rgba(255,255,255,0.9); overflow: hidden; white-space: nowrap; }
+
+  /* Timeline viz */
+  .timeline-bar { position: relative; height: 48px; background: #1e293b; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  .timeline-fill { position: absolute; left: 0; top: 0; height: 100%; background: #312e81; }
+  .timeline-head { position: absolute; top: 0; height: 100%; width: 2px; background: white; }
+  .ev-marker { position: absolute; top: 0; height: 100%; border-radius: 3px; opacity: 0.8; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: white; }
+
+  /* Score wave */
+  .score-wave { display: flex; align-items: flex-end; gap: 2px; height: 48px; }
+  .score-bar { flex: 1; border-radius: 2px; min-width: 4px; }
+
+  /* Coord system */
+  .coord-box { background: #0a0f1e; border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 2; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--indigo); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; margin-top: 2px; }
+  .step-body .title { font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .step-body .desc  { color: var(--muted); font-size: 0.84rem; }
+
+  /* Feature grid */
+  .feat { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .feat .icon { font-size: 1.5rem; margin-bottom: 8px; }
+  .feat .ftitle { font-size: 0.88rem; font-weight: 700; margin-bottom: 4px; }
+  .feat .fdesc { font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
+
+  /* Separator */
+  hr { border: none; border-top: 1px solid var(--line); margin: 40px 0; }
+  .tag { font-size: 0.72rem; font-weight: 600; color: var(--muted); background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; }
+
+  /* Threshold indicator */
+  .thresh-bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; }
+  .thresh-seg { height: 100%; }
+
+  .mono { font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
+        <span style="font-size:2.4rem">🏸</span>
+        <h1>BadmintonIQ</h1>
+      </div>
+      <p class="hero-subtitle">3D Pose Pipeline — Stroke Analysis &amp; Comparison Framework</p>
+      <div class="hero-badges">
+        <span class="badge badge-indigo">SuperAI Hack3</span>
+        <span class="badge badge-cyan">v2.0</span>
+        <span class="badge badge-green">2026-05-29</span>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="stack-pill"><span class="dot" style="background:#f59e0b"></span>FastAPI (Python)</div>
+      <div class="stack-pill"><span class="dot" style="background:#61dafb"></span>React + Vite</div>
+      <div class="stack-pill"><span class="dot" style="background:#4ade80"></span>Three.js (3D)</div>
+      <div class="stack-pill"><span class="dot" style="background:#818cf8"></span>MediaPipe Pose</div>
+      <div class="stack-pill"><span class="dot" style="background:#e879f9"></span>WebSocket stream</div>
+    </div>
+  </div>
+
+  <!-- DATA PIPELINE -->
+  <section>
+    <h2>Data Pipeline</h2>
+    <div class="flow" style="gap:4px">
+      <div class="flow-node">
+        <div class="label">Input</div>
+        <div class="value">📹 Video / Live Camera</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" style="border-color:#6366f1">
+        <div class="label">Extractor</div>
+        <div class="value">MediaPipe Pose<br><span style="font-size:0.75rem;color:var(--muted)">+ Kalman filter</span></div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" style="border-color:#22d3ee">
+        <div class="label">17 Joints</div>
+        <div class="value">World XYZ coords<br><span style="font-size:0.75rem;color:var(--muted)">+ image 2D overlay</span></div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" style="border-color:#4ade80">
+        <div class="label">Normalize</div>
+        <div class="value">Center @ Hips<br><span style="font-size:0.75rem;color:var(--muted)">scale = Hips→Neck dist</span></div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" style="border-color:#fbbf24">
+        <div class="label">Match &amp; Align</div>
+        <div class="value">Best-any-frame<br><span style="font-size:0.75rem;color:var(--muted)">+ DTW alignment</span></div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node" style="border-color:#c084fc">
+        <div class="label">Output</div>
+        <div class="value">Score / Phase<br><span style="font-size:0.75rem;color:var(--muted)">3D compare view</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COORDINATE SYSTEM -->
+  <section>
+    <h2>Coordinate System</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="coord-box">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:8px">MediaPipe World</div>
+        <div><span style="color:var(--red)">X</span> = right</div>
+        <div><span style="color:var(--green)">Y</span> = down</div>
+        <div><span style="color:var(--blue)">Z</span> = forward (into camera)</div>
+        <div style="margin-top:8px;color:#475569">origin = body center (torso)</div>
+      </div>
+      <div class="coord-box">
+        <div style="color:var(--cyan);font-weight:700;margin-bottom:8px">Three.js Conversion</div>
+        <div><span style="color:var(--red)">X</span> = x</div>
+        <div><span style="color:var(--green)">Y</span> = <span style="color:var(--amber)">−y</span></div>
+        <div><span style="color:var(--blue)">Z</span> = <span style="color:var(--amber)">−z</span></div>
+        <div style="margin-top:8px;color:#475569">flip Y and Z to match Three.js</div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:12px 16px;background:var(--panel2);border-radius:8px;border:1px solid var(--line);font-size:0.82rem;color:var(--amber)">
+      ⚠ Hips is always <code>[0, 0, 0]</code> after normalization — distance from Hips is always 0 → excluded from similarity scoring (weight = 0). Spine1 (lerp Hips→Neck at 33%) is also excluded.
+    </div>
+  </section>
+
+  <!-- FILE STRUCTURE -->
+  <section>
+    <h2>Key Files</h2>
+    <div class="card">
+      <table class="file-table">
+        <thead>
+          <tr><th>File</th><th>Role</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>backend/main.py</td><td><span class="badge badge-indigo">FastAPI</span></td><td>Upload, WebSocket stream, REST: sessions, labels, keypoints, PATCH phases</td></tr>
+          <tr><td>backend/app/pose/extractor.py</td><td><span class="badge badge-cyan">ML</span></td><td>MediaPipe → 17-joint mapping, Kalman filter smoothing, compute Hips/Neck/Spine/Head</td></tr>
+          <tr><td>frontend/src/lib/poseSimilarity.js</td><td><span class="badge badge-green">Core</span></td><td>normalizePose, poseSimilarity (weighted), matchLabelsToFrames, computeStrokeAlignment (DTW), poseSimilarityDetailed, STROKE_WEIGHTS, getStrokeWeights</td></tr>
+          <tr><td>frontend/src/lib/strokePhaseDetector.js</td><td><span class="badge badge-amber">Analysis</span></td><td>detectForehandPhases — wrist velocity + elbow angle signals, Gaussian smoothing, 5-phase segmentation</td></tr>
+          <tr><td>frontend/src/components/AvatarViewer.jsx</td><td><span class="badge badge-purple">3D</span></td><td>Three.js scene, GLB model, bone quaternion animation</td></tr>
+          <tr><td>frontend/src/components/SkeletonViewer3D.jsx</td><td><span class="badge badge-purple">3D</span></td><td>Standalone skeleton viewer — joint spheres, bones, raycasting tooltips, shoulder rotation viz</td></tr>
+          <tr><td>frontend/src/pages/SessionPage.jsx</td><td><span class="badge badge-indigo">UI</span></td><td>Replay, compare mode, DTW sync, score wave, Thai grade labels, DraggableWindow</td></tr>
+          <tr><td>frontend/src/pages/LabelEditorPage.jsx</td><td><span class="badge badge-indigo">UI</span></td><td>/labels — phase detection, manual override, label management</td></tr>
+          <tr><td>frontend/src/pages/HomePage.jsx</td><td><span class="badge badge-indigo">UI</span></td><td>Upload, camera, session list with multi-select delete</td></tr>
+          <tr><td>frontend/src/lib/boneAnimation.js</td><td><span class="badge badge-cyan">Math</span></td><td>Joint → bone quaternion conversion for 3D avatar</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- POSE SIMILARITY -->
+  <section>
+    <h2>Pose Similarity Algorithms</h2>
+
+    <div class="algo">
+      <div class="algo-title"><span class="badge badge-cyan">1</span> normalizePose(kp)</div>
+      <div class="algo-body">
+        Translates all joints so Hips = [0,0,0]. Scale = first available distance from: (Hips→Neck) → (LeftArm→RightArm) → (LeftUpLeg→RightUpLeg).
+        Returns null if &lt; 8 joints valid.
+      </div>
+    </div>
+
+    <div class="algo">
+      <div class="algo-title"><span class="badge badge-cyan">2</span> poseSimilarity(a, b, weights)</div>
+      <div class="algo-body">
+        Both poses must already be normalized. Formula: <code>1 / (1 + weightedAvgDist)</code>
+        <ul style="margin-top:8px">
+          <li>Iterates JOINT_NAMES_17, skips joints with weight ≤ 0</li>
+          <li>Weighted average: <code>Σ(dist × w) / Σ(w)</code></li>
+          <li>Returns 0 if total weight &lt; 2</li>
+          <li>Range: 0–1, where 1.0 = perfect match</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="algo">
+      <div class="algo-title"><span class="badge badge-amber">3</span> matchLabelsToFrames — Best-Any-Frame</div>
+      <div class="algo-body">
+        Speed-invariant matching. For each session frame, score against ALL label poses, keep the best.
+        Group consecutive hits (gap tolerance = max(3, floor(cooldown/3))). Each group → one event centered on peak score frame.
+        <div style="margin-top:8px;padding:10px;background:#0a0f1e;border-radius:6px;font-size:0.8rem;font-family:var(--font-mono)">
+          <span class="cm">// Old: sequential window → score 0.64 cross-session</span><br>
+          <span class="cm">// New: best-any-frame → score 0.84+ cross-session</span><br>
+          hitFrames ← frames <span class="kw">where</span> max(sim(frame, labelSeq[*])) ≥ 0.78
+        </div>
+      </div>
+    </div>
+
+    <div class="algo">
+      <div class="algo-title"><span class="badge badge-purple">4</span> computeStrokeAlignment — DTW</div>
+      <div class="algo-body">
+        Dynamic Time Warping for monotonic label→session frame mapping.
+        <ul style="margin-top:8px">
+          <li>Cost matrix M×N: <code>cost[i][j] = 1 - similarity(labelFrame[i], sessionFrame[j])</code></li>
+          <li>Fill: <code>dtw[i][j] = cost + min(diag, up, left)</code></li>
+          <li>Traceback (M-1, N-1) → (0,0) → path → <code>labelToSession[]</code> array</li>
+          <li>Attaches <code>sessionToLabel</code> Map for O(1) reverse lookup during playback</li>
+          <li>Self-match gives label[k]→session[k] with ~100% scores</li>
+        </ul>
+        <div style="margin-top:8px;padding:10px;background:#0a0f1e;border-radius:6px;font-size:0.8rem;font-family:var(--font-mono)">
+          <span class="kw">for</span> i <span class="kw">in</span> M: <span class="kw">for</span> j <span class="kw">in</span> N:<br>
+          &nbsp;&nbsp;dtw[i][j] = (<span class="num">1</span>-sim(i,j)) + <span class="fn">min</span>(diag, up, left)<br>
+          result.<span class="fn">sessionToLabel</span> = Map&lt;sessionIdx, labelIdx&gt;
+        </div>
+      </div>
+    </div>
+
+    <div class="algo">
+      <div class="algo-title"><span class="badge badge-green">5</span> Compare Mode — Sync Strategy</div>
+      <div class="algo-body">
+        Two modes depending on context:
+        <ul style="margin-top:8px">
+          <li><b style="color:var(--amber)">Event-window (click/auto-event):</b> linear interpolation within event range: <code>t = (frame - start) / (end - start)</code>. Then event-scoped DTW on only those frames for accurate per-pose sync.</li>
+          <li><b style="color:var(--cyan)">Manual preview:</b> full-session DTW sessionToLabel map — O(1) lookup + nearest-frame fallback.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- JOINT WEIGHTS -->
+  <section>
+    <h2>Stroke-Specific Joint Weights</h2>
+    <p style="margin-bottom:16px">Applied to <code>poseSimilarity</code>, <code>matchLabelsToFrames</code>, <code>computeStrokeAlignment</code>, and <code>poseSimilarityDetailed</code>. Preset selected from label name.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <h3 style="color:var(--amber);margin-bottom:12px">forehand_right (clear / smash / drop)</h3>
+        <div class="weight-grid">
+          <div class="weight-item w4"><span class="jname">RightHand</span><span class="jw">4×</span></div>
+          <div class="weight-item w3"><span class="jname">RightForeArm</span><span class="jw">3×</span></div>
+          <div class="weight-item w3"><span class="jname">RightArm</span><span class="jw">3×</span></div>
+          <div class="weight-item w2"><span class="jname">Spine2</span><span class="jw">1.5×</span></div>
+          <div class="weight-item w2"><span class="jname">Neck</span><span class="jw">1.5×</span></div>
+          <div class="weight-item w1"><span class="jname">RightUpLeg</span><span class="jw">1×</span></div>
+          <div class="weight-item w1"><span class="jname">LeftArm</span><span class="jw">0.8×</span></div>
+          <div class="weight-item w0"><span class="jname">Hips</span><span class="jw">0 (skip)</span></div>
+          <div class="weight-item w0"><span class="jname">Spine1</span><span class="jw">0 (skip)</span></div>
+        </div>
+      </div>
+      <div>
+        <h3 style="color:var(--cyan);margin-bottom:12px">Why skip Hips &amp; Spine1?</h3>
+        <div class="card" style="font-size:0.84rem;color:var(--muted)">
+          <p>After <code>normalizePose()</code>, <b style="color:var(--text)">Hips is always [0,0,0]</b> (it's the origin).</p>
+          <br>
+          <p>→ <code>distance(Hips_A, Hips_B) = 0</code> always</p>
+          <p>→ Score always 100%</p>
+          <p>→ Inflates overall similarity + misleads joint table</p>
+          <br>
+          <p><b style="color:var(--text)">Spine1</b> = lerp(Hips, Neck, 0.33) — very close to origin, barely moves relative to scale.</p>
+          <br>
+          <p>Both excluded with weight = 0 across all presets.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHASE DETECTION -->
+  <section>
+    <h2>Stroke Phase Detection</h2>
+    <p style="margin-bottom:16px">Runs on label frames from <code>detectForehandPhases(frames)</code>. No hardcoded frame counts — pure signal-based.</p>
+
+    <div class="phase-strip" style="margin-bottom:20px">
+      <div class="phase-seg" style="flex:1;background:#64748b">Preparation</div>
+      <div class="phase-seg" style="flex:2;background:#3b82f6">Backswing</div>
+      <div class="phase-seg" style="flex:1.5;background:#f59e0b">Acceleration</div>
+      <div class="phase-seg" style="flex:0.4;background:#ef4444">⚡</div>
+      <div class="phase-seg" style="flex:1.8;background:#22c55e">Follow-through</div>
+    </div>
+
+    <div class="card-grid cols2">
+      <div>
+        <div class="algo">
+          <div class="algo-title">Signals Extracted</div>
+          <div class="algo-body">
+            <ul>
+              <li><b style="color:var(--text)">Wrist velocity</b> = Euclidean distance(RightHand[t], RightHand[t-1])</li>
+              <li><b style="color:var(--text)">Elbow angle</b> = angleBetween(RightArm, RightForeArm, RightHand)</li>
+              <li>Both smoothed with Gaussian window (σ=2)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="algo">
+          <div class="algo-title">Detection Order</div>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-body"><div class="title">Impact ⚡</div><div class="desc">Frame of maximum wrist velocity</div></div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-body"><div class="title">Backswing Peak</div><div class="desc">Min elbow angle before impact (arm most bent)</div></div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-body"><div class="title">Backswing Start</div><div class="desc">Last local max of elbow angle before backswing peak</div></div>
+            </div>
+            <div class="step">
+              <div class="step-num">4</div>
+              <div class="step-body"><div class="title">Follow-through End</div><div class="desc">First frame after impact where velocity &lt; 20% of max</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="algo" style="height:100%">
+          <div class="algo-title">Output</div>
+          <div class="algo-body">
+            <pre style="margin-top:8px"><span class="kw">return</span> {
+  <span class="str">keyFrames</span>: {
+    <span class="str">backswingStart</span>: <span class="num">5</span>,
+    <span class="str">backswingPeak</span>:  <span class="num">15</span>,
+    <span class="str">impact</span>:         <span class="num">28</span>,
+    <span class="str">followEnd</span>:      <span class="num">40</span>,
+  },
+  <span class="str">phases</span>: {
+    <span class="str">preparation</span>:   { start: <span class="num">0</span>,  end: <span class="num">5</span>  },
+    <span class="str">backswing</span>:     { start: <span class="num">5</span>,  end: <span class="num">15</span> },
+    <span class="str">acceleration</span>:  { start: <span class="num">15</span>, end: <span class="num">28</span> },
+    <span class="str">impact</span>:        { start: <span class="num">28</span>, end: <span class="num">28</span> },
+    <span class="str">followThrough</span>: { start: <span class="num">28</span>, end: <span class="num">40</span> },
+  },
+  <span class="str">phaseAtFrame</span>: <span class="cm">// Array&lt;phaseName&gt;</span>
+  <span class="str">signals</span>: { velocity, elbowAngles }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARE MODE -->
+  <section>
+    <h2>Compare Mode</h2>
+    <div class="card-grid cols3">
+      <div class="feat">
+        <div class="icon">📊</div>
+        <div class="ftitle">Score Wave</div>
+        <div class="fdesc">One bar per label frame (e.g. 46 bars). Color: green ≥85%, yellow ≥78%, orange ≥65%, slate &lt;65%. Active frame gets white outline. Phase bands shown above bars.</div>
+      </div>
+      <div class="feat">
+        <div class="icon">🦴</div>
+        <div class="ftitle">Side-by-Side 3D</div>
+        <div class="fdesc">Left = current session skeleton (joints colored by per-joint score). Right = label skeleton at the DTW-aligned frame. Phase badge top-left. ΔShoulder bottom-right.</div>
+      </div>
+      <div class="feat">
+        <div class="icon">🎯</div>
+        <div class="ftitle">Joint Score Table</div>
+        <div class="fdesc">Per-joint scores from <code>poseSimilarityDetailed</code>. Zero-weight joints (Hips, Spine1) excluded. Color-coded: green ≥80%, yellow ≥60%, red &lt;60%.</div>
+      </div>
+      <div class="feat">
+        <div class="icon">🔄</div>
+        <div class="ftitle">Event-Window DTW Sync</div>
+        <div class="fdesc">When clicking a yellow marker, a second DTW runs on only the event's frames [start→end]. Handles varying stroke speed — fast prep + slow follow-through aligned correctly.</div>
+      </div>
+      <div class="feat">
+        <div class="icon">🏷</div>
+        <div class="ftitle">Thai Grade Display</div>
+        <div class="fdesc">Score → grade: S ยอดเยี่ยม (≥90%), A ดีมาก (≥70%), B พอใช้ได้ (≥50%), C ต้องฝึกเพิ่ม (&lt;50%). Per-joint names also shown in Thai.</div>
+      </div>
+      <div class="feat">
+        <div class="icon">💡</div>
+        <div class="ftitle">Compare Trigger</div>
+        <div class="fdesc">Only manual: click yellow timeline marker (stopPropagation), or ▶ Compare button in LabelPanel. No auto-trigger during playback (user preference).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTO MATCHING -->
+  <section>
+    <h2>Auto-Match Pipeline</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <h3 style="margin-bottom:12px">Match Threshold</h3>
+        <div class="thresh-bar" style="margin-bottom:8px">
+          <div class="thresh-seg" style="width:78%;background:linear-gradient(90deg,#ef4444,#f59e0b)"></div>
+          <div class="thresh-seg" style="width:22%;background:linear-gradient(90deg,#fbbf24,#4ade80)"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--muted);margin-bottom:16px">
+          <span>0.0 — no match</span>
+          <span style="color:var(--amber)">0.78 threshold</span>
+          <span>1.0 — perfect</span>
+        </div>
+        <div class="card" style="font-size:0.84rem">
+          <div style="margin-bottom:8px"><span style="color:var(--green)">✓</span> Old algorithm (sequential window): 0.641 cross-session</div>
+          <div><span style="color:var(--green)">✓</span> New algorithm (best-any-frame): 0.841 cross-session</div>
+        </div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:12px">Event Structure</h3>
+        <pre>{
+  id:         <span class="str">"auto-{label_id}-{startFi}"</span>,
+  label_id:   <span class="str">"abc123"</span>,
+  label:      <span class="str">"Forehand Clear"</span>,
+  start_frame: <span class="num">61</span>,
+  end_frame:   <span class="num">107</span>,
+  frame_index: <span class="num">61</span>,
+  score:       <span class="num">0.841</span>,
+  source:      <span class="str">"auto_similarity"</span>,
+  color:       <span class="str">"#f59e0b"</span>,
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- BACKEND API -->
+  <section>
+    <h2>Backend REST API</h2>
+    <div class="card">
+      <table class="file-table">
+        <thead>
+          <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>POST</td><td>/api/sessions/upload</td><td>Upload video file, returns session_id</td></tr>
+          <tr><td>POST</td><td>/api/sessions/{id}/process</td><td>Start MediaPipe processing (frame_skip, single_person, crop ROI)</td></tr>
+          <tr><td>POST</td><td>/api/sessions/{id}/probe</td><td>Test MediaPipe on 1 frame, returns debug_image + joint count</td></tr>
+          <tr><td>GET</td><td>/api/sessions/{id}/keypoints</td><td>All frame keypoints for replay + matching</td></tr>
+          <tr><td>GET/POST</td><td>/api/sessions/{id}/labels</td><td>Get / save hit events</td></tr>
+          <tr><td>POST</td><td>/api/sessions/{id}/label-clips</td><td>Save a clip range as a new label</td></tr>
+          <tr><td>DELETE</td><td>/api/sessions/{id}</td><td>Delete session files from disk</td></tr>
+          <tr><td>GET</td><td>/api/labels</td><td>List all label summaries</td></tr>
+          <tr><td>GET</td><td>/api/labels/{id}</td><td>Full label with frames[], normalized_sequence[], phases</td></tr>
+          <tr><td>PATCH</td><td>/api/labels/{id}</td><td>Update name, color, enabled, <b>phases</b> {backswingStart, backswingPeak, impact, followEnd}</td></tr>
+          <tr><td>DELETE</td><td>/api/labels/{id}</td><td>Remove label</td></tr>
+          <tr><td>POST</td><td>/api/labels/{id}/import</td><td>Import legacy label to label_clip_v1 format</td></tr>
+          <tr><td>WS</td><td>/ws/process/{id}</td><td>Stream keypoints frame-by-frame during processing</td></tr>
+          <tr><td>WS</td><td>/ws/replay/{id}</td><td>Replay keypoints with play/pause/seek/speed control</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DATA SCHEMA -->
+  <section>
+    <h2>Key Data Schemas</h2>
+    <div class="card-grid cols2">
+      <div>
+        <h3 style="margin-bottom:10px">Frame Data</h3>
+        <pre>{
+  frame_index: <span class="num">42</span>,
+  timestamp_ms: <span class="num">1400</span>,
+  keypoints_17: {
+    <span class="str">Hips</span>:      [x, y, z],
+    <span class="str">RightHand</span>: [x, y, z],
+    <span class="cm">// ... 17 joints total</span>
+  },
+  keypoints_image: {
+    <span class="str">RightHand</span>: [nx, ny], <span class="cm">// 0-1 image coords</span>
+  },
+  pose_detected: <span class="kw">true</span>,
+  pose_visibility_mean: <span class="num">0.82</span>,
+  joint_count: <span class="num">17</span>,
+}</pre>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">Label Clip (label_clip_v1)</h3>
+        <pre>{
+  label_id: <span class="str">"abc123"</span>,
+  schema:   <span class="str">"label_clip_v1"</span>,
+  name:     <span class="str">"Forehand Clear"</span>,
+  color:    <span class="str">"#f59e0b"</span>,
+  enabled:  <span class="kw">true</span>,
+  match_ready: <span class="kw">true</span>,
+  frame_count: <span class="num">46</span>,
+  frames: [ { keypoints_17, ... } ],
+  normalized_sequence: [
+    { pose: { Hips:[0,0,0], ... } }
+  ],
+  phases: {          <span class="cm">// optional, saved via /labels PATCH</span>
+    backswingStart: <span class="num">5</span>,
+    backswingPeak:  <span class="num">15</span>,
+    impact:         <span class="num">28</span>,
+    followEnd:      <span class="num">40</span>,
+  },
+  source_session_id: <span class="str">"sessionId"</span>,
+  start_frame: <span class="num">61</span>,
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPORTANT DECISIONS -->
+  <section>
+    <h2>Design Decisions</h2>
+    <div class="card-grid cols2">
+      <div class="algo">
+        <div class="algo-title">JS normalization over backend rounded data</div>
+        <div class="algo-body">
+          <code>computeStrokeAlignment</code> uses <code>label.frames[i].keypoints_17</code> + frontend <code>normalizePose()</code> instead of backend's pre-normalized <code>normalized_sequence.pose</code> (rounded to 5dp in Python). This gives bit-exact self-match scores (~100%) because both poses go through the same JS float operations.
+        </div>
+      </div>
+      <div class="algo">
+        <div class="algo-title">DTW for analysis, event-progress for playback</div>
+        <div class="algo-body">
+          Full-session DTW (all frames × 46 label frames) is expensive but correct for score wave display. For real-time playback within an event window, a second lighter DTW scoped to the event's frames gives smooth sync without artifacts from DTW mapping frames outside the event range to wrong label frames.
+        </div>
+      </div>
+      <div class="algo">
+        <div class="algo-title">Always-mounted AvatarViewer</div>
+        <div class="algo-body">
+          The normal 3D view (AvatarViewer) is always in the DOM — hidden with <code>invisible pointer-events-none</code> CSS when compare mode is on. If unmounted via conditional rendering, Three.js scene is destroyed and must be re-initialized on toggle, causing a visible flash.
+        </div>
+      </div>
+      <div class="algo">
+        <div class="algo-title">No auto-trigger during playback</div>
+        <div class="algo-body">
+          An earlier implementation auto-activated compare mode when the playhead hit a yellow marker during playback. Removed by user request — compare only activates on explicit click of a timeline marker or ▶ Compare button.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RUN -->
+  <section>
+    <h2>Running the Stack</h2>
+    <div class="card-grid cols2">
+      <div class="card">
+        <h3 style="margin-bottom:12px">Backend</h3>
+        <pre>cd 3d-pose/backend
+uvicorn main:app \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --reload</pre>
+        <p style="margin-top:12px;font-size:0.82rem">Dependencies: <code>mediapipe</code>, <code>opencv-python</code>, <code>fastapi</code>, <code>uvicorn</code>, <code>aiofiles</code>, <code>numpy</code></p>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:12px">Frontend</h3>
+        <pre>cd 3d-pose/frontend
+npm install
+npm run dev
+# → http://localhost:5173</pre>
+        <p style="margin-top:12px;font-size:0.82rem">Vite proxies <code>/api</code> and <code>/ws</code> to <code>localhost:8000</code>. LAN devices access at <code>http://[local-ip]:5173</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════ FUN FACTS ═══ -->
+  <section id="fun-facts">
+    <h2>🤯 Fun Facts — How MediaPipe Sees Your Body</h2>
+    <p style="margin-bottom:20px">MediaPipe BlazePose reconstructs a full 3D skeleton from a single 2D camera frame in ~5 ms on CPU. Here's the magic behind every number it produces.</p>
+
+    <div class="card-grid cols2" style="margin-bottom:18px">
+
+      <!-- Left vs Right -->
+      <div class="card" style="border-color:#6366f1;background:linear-gradient(135deg,#1e1b4b 0%,#1e293b 100%)">
+        <div style="font-size:2rem;margin-bottom:8px">👈👉</div>
+        <h2 style="color:#a5b4fc;margin-bottom:8px">Left vs Right — It's Anatomy, Not the Camera</h2>
+        <p style="margin-bottom:10px">
+          MediaPipe never calls a joint "left" based on where it appears on screen.
+          Instead, BlazePose was trained on thousands of annotated 3D human skeletons where
+          <strong style="color:#e2e8f0">anatomical left/right</strong> is ground truth regardless of the person's facing direction.
+        </p>
+        <p style="margin-bottom:10px">
+          During inference the model sees both shoulders, both hips, and the full body topology at once.
+          It infers side assignment from the <em>global body geometry</em>:
+          if the left shoulder is to the camera's right because the person is facing away, BlazePose still labels it <code>LEFT_SHOULDER</code>.
+        </p>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;font-size:0.82rem;color:#94a3b8;margin-top:8px">
+          <span style="color:#a5b4fc">⚡ Consequence for us:</span> our joint names
+          (<code>LeftArm</code>, <code>RightHand</code>, …) stay correct even when the player turns around or is filmed from behind. No mirroring needed.
+        </div>
+      </div>
+
+      <!-- Z depth -->
+      <div class="card" style="border-color:#22d3ee;background:linear-gradient(135deg,#0c2a2e 0%,#1e293b 100%)">
+        <div style="font-size:2rem;margin-bottom:8px">📐</div>
+        <h2 style="color:#67e8f9;margin-bottom:8px">Z-Depth — Guessing 3D from a Flat Photo</h2>
+        <p style="margin-bottom:10px">
+          The camera captures no depth information — it's a pure 2D projection.
+          MediaPipe <em>hallucinates</em> the Z axis using <strong style="color:#e2e8f0">learned body-proportion priors</strong>:
+          average shoulder width ≈ 40 cm, forearm length relative to upper arm, hip width, etc.
+        </p>
+        <p style="margin-bottom:10px">
+          It combines three cues:
+        </p>
+        <ul style="color:#94a3b8;padding-left:18px;margin-bottom:10px;line-height:2">
+          <li><strong style="color:#e2e8f0">Perspective foreshortening</strong> — a raised elbow appears shorter in 2D; the model learned how much shorter per degree of rotation</li>
+          <li><strong style="color:#e2e8f0">Occlusion / overlap</strong> — if the forearm crosses the torso, that side is probably in front</li>
+          <li><strong style="color:#e2e8f0">Global pose prior</strong> — the neural net learned thousands of realistic poses; it picks the most plausible 3D lift</li>
+        </ul>
+        <div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;font-size:0.82rem;color:#94a3b8;margin-top:4px">
+          <span style="color:#67e8f9">⚡ Result:</span> X and Y are accurate to a few mm.
+          Z is accurate to <strong style="color:#e2e8f0">a few cm</strong> for slow, clear movements — but can jump 10–15 cm frame-to-frame during fast strokes. That's why we run a Kalman filter on top.
+        </div>
+      </div>
+    </div>
+
+    <div class="card-grid cols3">
+
+      <!-- Kalman filter -->
+      <div class="card" style="border-color:#fbbf24;background:linear-gradient(135deg,#1c1400 0%,#1e293b 100%)">
+        <div style="font-size:1.8rem;margin-bottom:6px">🎯</div>
+        <h3 style="color:#fcd34d">Why the Kalman Filter?</h3>
+        <p style="font-size:0.83rem">
+          MediaPipe outputs a new skeleton independently every frame — no temporal memory.
+          A joint that is briefly occluded or at a pose the model finds ambiguous can
+          teleport several centimetres in one frame.<br><br>
+          The Kalman filter maintains a <strong style="color:#e2e8f0">6-state model</strong> (position + velocity) per joint.
+          It predicts where the joint should be next frame based on velocity, then blends that prediction
+          with the raw MediaPipe reading, weighted by how trustworthy each source is.
+          Fast, smooth trajectories — especially for Z.
+        </p>
+      </div>
+
+      <!-- Origin at Hips -->
+      <div class="card" style="border-color:#4ade80;background:linear-gradient(135deg,#021a0a 0%,#1e293b 100%)">
+        <div style="font-size:1.8rem;margin-bottom:6px">🏋️</div>
+        <h3 style="color:#86efac">The Origin Lives at Your Hips</h3>
+        <p style="font-size:0.83rem">
+          MediaPipe's world-space origin is wherever the person happens to stand in the room.
+          Two recordings made at different distances from the camera produce wildly different absolute coordinates.<br><br>
+          We solve this in <code>normalizePose()</code>:
+          subtract the <strong style="color:#e2e8f0">Hips midpoint</strong> so every pose is centered at [0,0,0],
+          then divide by body scale (Hips→Neck distance).
+          After this step a 1.60 m player and a 1.95 m player produce comparable numbers —
+          and <code>Hips</code> is always exactly [0, 0, 0] (hence its weight = 0; scoring it would always give 100%).
+        </p>
+      </div>
+
+      <!-- Speed of light -->
+      <div class="card" style="border-color:#c084fc;background:linear-gradient(135deg,#1a0030 0%,#1e293b 100%)">
+        <div style="font-size:1.8rem;margin-bottom:6px">⚡</div>
+        <h3 style="color:#d8b4fe">5 ms to a Full 3D Human</h3>
+        <p style="font-size:0.83rem">
+          BlazePose uses a two-stage architecture:
+          <ol style="padding-left:16px;margin-top:6px;line-height:2;color:#94a3b8">
+            <li><strong style="color:#e2e8f0">Pose detector</strong> — finds the bounding box of the person in the frame (runs only once or when the person is lost)</li>
+            <li><strong style="color:#e2e8f0">Landmark model</strong> — given the crop, predicts 33 landmarks × (x, y, z, visibility) in one forward pass</li>
+          </ol>
+          <br>
+          We map 33 MediaPipe landmarks → <strong style="color:#e2e8f0">17 biomechanical joints</strong>
+          (e.g. average of left/right hip → <code>Hips</code>).
+          The whole pipeline — decode JPEG → MediaPipe → Kalman → 17-joint dict — runs in one FastAPI request handler.
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Coordinate diagram -->
+    <div class="card" style="margin-top:18px;border-color:#334155">
+      <h3>MediaPipe World Coordinates → Three.js</h3>
+      <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;margin-top:8px">
+        <div style="flex:1;min-width:240px">
+          <p style="font-size:0.83rem;margin-bottom:10px">MediaPipe outputs <strong style="color:#e2e8f0">world coordinates</strong> (not image-pixel coordinates). The axes are:</p>
+          <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+            <tr style="border-bottom:1px solid #334155">
+              <th style="text-align:left;padding:6px 10px;color:#94a3b8">Axis</th>
+              <th style="text-align:left;padding:6px 10px;color:#94a3b8">Direction</th>
+              <th style="text-align:left;padding:6px 10px;color:#94a3b8">Three.js</th>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b">
+              <td style="padding:6px 10px"><code style="color:#60a5fa">X</code></td>
+              <td style="padding:6px 10px;color:#94a3b8">Camera right →</td>
+              <td style="padding:6px 10px"><code style="color:#4ade80">X</code> (unchanged)</td>
+            </tr>
+            <tr style="border-bottom:1px solid #1e293b">
+              <td style="padding:6px 10px"><code style="color:#60a5fa">Y</code></td>
+              <td style="padding:6px 10px;color:#94a3b8">Down ↓</td>
+              <td style="padding:6px 10px"><code style="color:#f87171">−Y</code> (flipped up)</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 10px"><code style="color:#60a5fa">Z</code></td>
+              <td style="padding:6px 10px;color:#94a3b8">Into camera (toward lens)</td>
+              <td style="padding:6px 10px"><code style="color:#f87171">−Z</code> (flipped forward)</td>
+            </tr>
+          </table>
+        </div>
+        <div style="flex:1;min-width:240px">
+          <p style="font-size:0.83rem;margin-bottom:10px">In code (<code>extractor.py</code> → frontend):</p>
+          <pre style="margin:0"><span class="cm"># backend: raw MediaPipe → stored as-is</span>
+kp[<span class="str">"RightHand"</span>] = [x, y, z]
+
+<span class="cm">// frontend: Three.js scene</span>
+<span class="kw">const</span> pos = [x, <span class="num">-</span>y, <span class="num">-</span>z]</pre>
+          <p style="font-size:0.78rem;margin-top:10px;color:#64748b">
+            Z increases as the joint moves <em>toward</em> the camera lens.
+            A raised hand in front of the body has a larger (more positive) Z than the hip.
+            After our flip, it becomes −Z which is "forward" in Three.js right-hand coordinates.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr>
+  <div style="text-align:center;color:var(--muted);font-size:0.8rem;padding:16px 0">
+    BadmintonIQ · SuperAI Hack3 · 2026 ·
+    <span class="mono" style="font-size:0.75rem">framework_overview.html</span>
+  </div>
+
+</div>
+</body>
+</html>

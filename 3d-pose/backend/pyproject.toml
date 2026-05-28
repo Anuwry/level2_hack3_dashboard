@@ -1,0 +1,14 @@
+[project]
+name = "badmintoniq-pose"
+version = "0.1.0"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.0",
+    "mediapipe==0.10.14",
+    "opencv-python-headless==4.9.0.80",
+    "numpy==1.26.4",
+    "python-multipart==0.0.12",
+    "aiofiles==23.2.1",
+    "websockets==12.0",
+]

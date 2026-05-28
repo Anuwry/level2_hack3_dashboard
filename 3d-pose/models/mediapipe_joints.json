@@ -1,0 +1,70 @@
+{
+  "description": "MediaPipe 17-joint skeleton used by BadmintonIQ pose pipeline",
+  "coordinate_system": "MediaPipe world coords: X=right, Y=down, Z=forward (into camera)",
+  "note": "In Three.js we convert to: [x, -y, -z]",
+
+  "joints": [
+    "Hips",
+    "Spine1",
+    "Spine2",
+    "Neck",
+    "Head",
+    "LeftArm",
+    "LeftForeArm",
+    "LeftHand",
+    "RightArm",
+    "RightForeArm",
+    "RightHand",
+    "LeftUpLeg",
+    "LeftLeg",
+    "LeftFoot",
+    "RightUpLeg",
+    "RightLeg",
+    "RightFoot"
+  ],
+
+  "connections": [
+    ["Hips",      "Spine1"],
+    ["Spine1",    "Spine2"],
+    ["Spine2",    "Neck"],
+    ["Neck",      "Head"],
+    ["Neck",      "LeftArm"],
+    ["LeftArm",   "LeftForeArm"],
+    ["LeftForeArm","LeftHand"],
+    ["Neck",      "RightArm"],
+    ["RightArm",  "RightForeArm"],
+    ["RightForeArm","RightHand"],
+    ["Hips",      "LeftUpLeg"],
+    ["LeftUpLeg", "LeftLeg"],
+    ["LeftLeg",   "LeftFoot"],
+    ["Hips",      "RightUpLeg"],
+    ["RightUpLeg","RightLeg"],
+    ["RightLeg",  "RightFoot"]
+  ],
+
+  "hierarchy": {
+    "Hips": {
+      "children": ["Spine1", "LeftUpLeg", "RightUpLeg"]
+    },
+    "Spine1": { "parent": "Hips",     "children": ["Spine2"] },
+    "Spine2": { "parent": "Spine1",   "children": ["Neck"] },
+    "Neck":   { "parent": "Spine2",   "children": ["Head", "LeftArm", "RightArm"] },
+    "Head":   { "parent": "Neck",     "children": [] },
+
+    "LeftArm":    { "parent": "Neck",        "children": ["LeftForeArm"] },
+    "LeftForeArm":{ "parent": "LeftArm",     "children": ["LeftHand"] },
+    "LeftHand":   { "parent": "LeftForeArm", "children": [] },
+
+    "RightArm":    { "parent": "Neck",         "children": ["RightForeArm"] },
+    "RightForeArm":{ "parent": "RightArm",     "children": ["RightHand"] },
+    "RightHand":   { "parent": "RightForeArm", "children": [] },
+
+    "LeftUpLeg": { "parent": "Hips",      "children": ["LeftLeg"] },
+    "LeftLeg":   { "parent": "LeftUpLeg", "children": ["LeftFoot"] },
+    "LeftFoot":  { "parent": "LeftLeg",   "children": [] },
+
+    "RightUpLeg": { "parent": "Hips",       "children": ["RightLeg"] },
+    "RightLeg":   { "parent": "RightUpLeg", "children": ["RightFoot"] },
+    "RightFoot":  { "parent": "RightLeg",   "children": [] }
+  }
+}

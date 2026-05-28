@@ -1,15 +1,21 @@
-node_modules
-dist
-.vercel
-.env
-.env.local
-npm-debug.log*
-__pycache__/
-**/__pycache__/
-*.pyc
-data/real_sessions/**/stream_events.jsonl
-data/real_sessions/**/incoming_files/*
-!data/real_sessions/**/incoming_files/.gitkeep
-public/data/real_sessions/**/stream_events.jsonl
-public/data/real_sessions/**/incoming_files/*
-!public/data/real_sessions/**/incoming_files/.gitkeep
+*.mp4
+# *.glb
+*.gltf
+*.blend
+*.png
+hack3
+P_Fern_Videos
+Real-Time-Motion-Transfer-to-a-3D-Avatar
+*.md
+# *.bat
+3d-pose/frontend/node_modules
+3d-pose/frontend/dist
+.agent
+3d-pose/data
+3d-pose/backend/__pycache__
+3d-pose/backend/.venv
+*.pem
+3d-pose/backend/app/__pycache__
+3d-pose/backend/app/pose/__pycache__
+badminton_nano
+simple-peer
