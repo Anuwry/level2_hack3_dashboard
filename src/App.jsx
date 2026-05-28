@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   BatteryFull,
@@ -24,6 +24,7 @@ import {
   Zap,
 } from 'lucide-react'
 import TrainingFormPage from './TrainingFormPage'
+import { swingIntensityRows } from './swingIntensityData.js'
 
 const asset = (name) => `/assets/${name}`
 
@@ -453,19 +454,42 @@ function ElbowDetail() {
   )
 }
 
-function SweetSpotDetail() {
+const impactLabelMap = {
+  frame_hit: 'Frame-Hit',
+  sweet_spot: 'Sweet-Spot',
+  off_sweet_spot: 'Soft-Sweet-Spot',
+}
+
+function SweetSpotDetail({ rows = swingIntensityRows }) {
+  const [selectedId, setSelectedId] = useState(rows[0]?.id || '')
+  const selectedRow = rows.find((row) => row.id === selectedId) || rows[0]
+  const selectedImpact = impactLabelMap[selectedRow?.category] || 'Unknown'
+
   return (
     <div className="detailGrid twoCol">
       <div className="sweetStage">
         <div className="racketWrap">
           <img src={asset('racket.png')} alt="Racket sweet spot" />
-          <span className="impactDot" aria-label="Sweet spot impact point" />
         </div>
       </div>
       <div className="impactSummary">
-        <span>Impact Score</span>
-        <b>98<small>/100</small></b>
-        <p>Contact is very close to the center of the racket face, so power transfer is strong.</p>
+        <span>Selected Impact</span>
+        <b>{selectedImpact}</b>
+        <p>{selectedRow?.file || 'No selected row'}</p>
+        <div className="impactRowList">
+          {rows.map((row) => (
+            <button
+              className={row.id === selectedRow?.id ? 'active' : ''}
+              type="button"
+              onClick={() => setSelectedId(row.id)}
+              key={row.id}
+            >
+              <span>#{row.shotNo}</span>
+              <b>{impactLabelMap[row.category]}</b>
+              <small>{row.peakSpeed} km/h</small>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -562,6 +586,435 @@ function SpeedDetail() {
   )
 }
 
+const formatCategoryName = (category) => category
+  .split('_')
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+  .join(' ')
+
+function buildSpeedPath(series, maxSpeed, width = 620, height = 210) {
+  if (!series.length || !maxSpeed) return ''
+
+  return series
+    .map(([time, speed], index) => {
+      const x = (index / Math.max(series.length - 1, 1)) * width
+      const y = height - (speed / maxSpeed) * (height - 28) - 14
+      return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
+    })
+    .join(' ')
+}
+
+function SwingReplayCanvas({ row, isPlaying }) {
+  const canvasRef = useRef(null)
+  const frameRef = useRef(0)
+  const animationRef = useRef(0)
+  const viewYawRef = useRef(0)
+  const dragRef = useRef({ active: false, x: 0 })
+  const [frameIndex, setFrameIndex] = useState(0)
+
+  const samples = useMemo(
+    () => row?.replay || row?.series?.map(([time, speed]) => [time, 0, 0, speed * 6.1, 1, speed * 6.1, speed]) || [],
+    [row],
+  )
+  const maxSpeed = Math.max(...samples.map((sample) => sample[6] || 0), 1)
+  const currentSample = samples[frameIndex] || samples[0] || [0, 0, 0, 0, 0, 0, 0]
+  const currentSpeed = currentSample[6] || 0
+  const currentIntensity = Math.min(100, Math.round((currentSpeed / maxSpeed) * (row?.intensity || 0)))
+  const durationSec = row ? (row.durationMs / 1000).toFixed(2) : '0.00'
+
+  useEffect(() => {
+    frameRef.current = 0
+    setFrameIndex(0)
+  }, [row?.id])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !row) return undefined
+
+    const ctx = canvas.getContext('2d')
+    let width = 0
+    let height = 0
+    let dpr = 1
+    let lastTime = 0
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect()
+      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      width = Math.max(1, rect.width)
+      height = Math.max(1, rect.height)
+      canvas.width = Math.floor(width * dpr)
+      canvas.height = Math.floor(height * dpr)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    const rotateX = (point, angle) => {
+      const cos = Math.cos(angle)
+      const sin = Math.sin(angle)
+      return { x: point.x, y: point.y * cos - point.z * sin, z: point.y * sin + point.z * cos }
+    }
+
+    const rotateY = (point, angle) => {
+      const cos = Math.cos(angle)
+      const sin = Math.sin(angle)
+      return { x: point.x * cos + point.z * sin, y: point.y, z: -point.x * sin + point.z * cos }
+    }
+
+    const rotateZ = (point, angle) => {
+      const cos = Math.cos(angle)
+      const sin = Math.sin(angle)
+      return { x: point.x * cos - point.y * sin, y: point.x * sin + point.y * cos, z: point.z }
+    }
+
+    const rotateRacket = (point, roll, pitch, yaw) => rotateZ(rotateY(rotateX(point, roll), pitch), yaw)
+
+    const camera = { rx: -0.45, ry: 0.62 }
+
+    const project = (point) => {
+      const xRotated = rotateX(point, camera.rx)
+      const rotated = rotateY(xRotated, camera.ry + viewYawRef.current)
+      const zoom = Math.max(120, Math.min(width, height) * 0.46)
+      const scale = zoom / Math.max(1.4, 3.8 + rotated.z)
+      return {
+        x: width / 2 + rotated.x * scale,
+        y: height / 2 + 44 - rotated.y * scale,
+        z: rotated.z,
+        scale,
+      }
+    }
+
+    const buildSwing = () => {
+      let roll = 0
+      let pitch = 0
+      let yaw = 0
+      let lastMs = samples[0]?.[0] || 0
+      const racketLength = 1.35
+
+      return samples.map((sample, index) => {
+        const [time, gx, gy, gz, accel, gyro, speed] = sample
+        const dt = Math.max(0.005, Math.min(0.05, ((time || 0) - lastMs) / 1000 || 0.02))
+        lastMs = time || lastMs
+
+        roll += (gx || 0) * Math.PI / 180 * dt
+        pitch += (gy || 0) * Math.PI / 180 * dt
+        yaw += (gz || 0) * Math.PI / 180 * dt
+
+        const t = index / Math.max(samples.length - 1, 1)
+        const hand = {
+          x: 0.28 * Math.sin(t * Math.PI * 1.7) + (gy || 0) / Math.max(row.peakGyro, 1) * 0.32,
+          y: -0.42 + 0.18 * Math.sin(t * Math.PI * 2.2) + ((accel || 1) - 1) * 0.05,
+          z: 0.22 * Math.cos(t * Math.PI * 1.25) + (gx || 0) / Math.max(row.peakGyro, 1) * 0.28,
+        }
+        const shaft = rotateRacket({ x: 0, y: racketLength, z: 0 }, roll, pitch, yaw)
+        const head = { x: hand.x + shaft.x, y: hand.y + shaft.y, z: hand.z + shaft.z }
+        return { hand, head, roll, pitch, yaw, gyro, accel, speed, speedRatio: (speed || 0) / maxSpeed }
+      })
+    }
+
+    const drawLine3D = (start, end, color, lineWidth = 1, alpha = 1) => {
+      const a = project(start)
+      const b = project(end)
+      ctx.globalAlpha = alpha
+      ctx.strokeStyle = color
+      ctx.lineWidth = lineWidth
+      ctx.beginPath()
+      ctx.moveTo(a.x, a.y)
+      ctx.lineTo(b.x, b.y)
+      ctx.stroke()
+      ctx.globalAlpha = 1
+    }
+
+    const drawPoint3D = (point, color, radius = 4, alpha = 1) => {
+      const projected = project(point)
+      ctx.globalAlpha = alpha
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.arc(projected.x, projected.y, radius, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.globalAlpha = 1
+    }
+
+    const drawRacket = (state) => {
+      drawLine3D(state.hand, state.head, '#eaf2ff', 6, 0.95)
+
+      const faceRadius = 0.18
+      const points = []
+      for (let index = 0; index < 22; index += 1) {
+        const angle = index / 22 * Math.PI * 2
+        const local = {
+          x: Math.cos(angle) * faceRadius,
+          y: 1.35,
+          z: Math.sin(angle) * faceRadius * 0.62,
+        }
+        const offset = rotateRacket(local, state.roll, state.pitch, state.yaw)
+        points.push({ x: state.hand.x + offset.x, y: state.hand.y + offset.y, z: state.hand.z + offset.z })
+      }
+
+      ctx.strokeStyle = state.speedRatio > 0.72 ? '#69f0ae' : '#ff5d8f'
+      ctx.lineWidth = 3
+      ctx.globalAlpha = 0.95
+      ctx.beginPath()
+      points.forEach((point, index) => {
+        const projected = project(point)
+        if (index === 0) ctx.moveTo(projected.x, projected.y)
+        else ctx.lineTo(projected.x, projected.y)
+      })
+      ctx.closePath()
+      ctx.stroke()
+      ctx.globalAlpha = 1
+
+      drawPoint3D(state.head, '#ff5d8f', 7 + state.speedRatio * 4)
+      drawPoint3D(state.hand, '#69f0ae', 5)
+    }
+
+    const draw = (time = 0) => {
+      if (!width || !height) resize()
+
+      if (isPlaying && time - lastTime > 44) {
+        frameRef.current = (frameRef.current + 1) % Math.max(samples.length, 1)
+        setFrameIndex(frameRef.current)
+        lastTime = time
+      }
+
+      const activeIndex = Math.min(frameRef.current, samples.length - 1)
+      const states = buildSwing()
+
+      ctx.clearRect(0, 0, width, height)
+      const bg = ctx.createRadialGradient(width * 0.55, height * 0.38, 12, width * 0.55, height * 0.38, width * 0.76)
+      bg.addColorStop(0, 'rgba(35, 90, 150, 0.22)')
+      bg.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, width, height)
+
+      for (let index = 1; index < states.length; index += 1) {
+        const previous = states[index - 1]
+        const point = states[index]
+        const isDrawn = index <= activeIndex || !isPlaying
+        drawLine3D(previous.head, point.head, point.speedRatio > 0.72 ? '#69f0ae' : '#33c8ff', point.speedRatio > 0.72 ? 4 : 2, isDrawn ? 0.88 : 0.16)
+      }
+      ctx.globalAlpha = 1
+
+      const state = states[activeIndex] || states[0]
+      if (state) drawRacket(state)
+
+      animationRef.current = requestAnimationFrame(draw)
+    }
+
+    resize()
+    draw()
+
+    const handlePointerDown = (event) => {
+      dragRef.current = { active: true, x: event.clientX }
+      canvas.setPointerCapture?.(event.pointerId)
+    }
+
+    const handlePointerMove = (event) => {
+      if (!dragRef.current.active) return
+
+      const deltaX = event.clientX - dragRef.current.x
+      dragRef.current.x = event.clientX
+      viewYawRef.current += deltaX * 0.008
+    }
+
+    const endDrag = (event) => {
+      dragRef.current.active = false
+      canvas.releasePointerCapture?.(event.pointerId)
+    }
+
+    canvas.addEventListener('pointerdown', handlePointerDown)
+    canvas.addEventListener('pointermove', handlePointerMove)
+    canvas.addEventListener('pointerup', endDrag)
+    canvas.addEventListener('pointerleave', endDrag)
+    window.addEventListener('resize', resize)
+
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown)
+      canvas.removeEventListener('pointermove', handlePointerMove)
+      canvas.removeEventListener('pointerup', endDrag)
+      canvas.removeEventListener('pointerleave', endDrag)
+      window.removeEventListener('resize', resize)
+      cancelAnimationFrame(animationRef.current)
+    }
+  }, [isPlaying, maxSpeed, row, samples])
+
+  return (
+    <div className="gyroReplayStage">
+      <canvas ref={canvasRef} />
+      <div className="gyroReplayHud">
+        <div><span>Frame</span><b>{frameIndex + 1} / {samples.length}</b></div>
+        <div><span>Time</span><b>{((currentSample[0] || 0) / 1000).toFixed(2)}s</b></div>
+        <div><span>Speed</span><b>{currentSpeed.toFixed(1)} km/h</b></div>
+        <div><span>Max</span><b>{row?.peakSpeed || 0} km/h</b></div>
+      </div>
+      <div className="gyroReplaySide">
+        <span>Live swing intensity</span>
+        <i><span style={{ width: `${currentIntensity}%` }} /></i>
+        <b>{row?.level || 'n/a'} · {currentIntensity}/100</b>
+        <small>Rows {row?.samples || 0} · Duration {durationSec}s · Peak gyro {row?.peakGyro || 0} dps</small>
+      </div>
+    </div>
+  )
+}
+
+function SwingIntensityDetail({ rows = [] }) {
+  const [selectedId, setSelectedId] = useState(rows[0]?.id || '')
+  const [playingId, setPlayingId] = useState('')
+  const [graphFrameIndex, setGraphFrameIndex] = useState(0)
+  const selectedRow = rows.find((row) => row.id === selectedId) || rows[0]
+  const isSelectedPlaying = playingId === selectedRow?.id
+  const maxSpeed = Math.max(...rows.flatMap((row) => row.series.map(([, speed]) => speed)), 1)
+  const graphPath = buildSpeedPath(selectedRow?.series || [], maxSpeed)
+  const graphLength = selectedRow?.series?.length || 1
+  const cursorIndex = Math.min(graphFrameIndex, graphLength - 1)
+  const cursorSpeed = selectedRow?.series?.[cursorIndex]?.[1] || 0
+  const cursorX = (cursorIndex / Math.max(graphLength - 1, 1)) * 620
+  const cursorY = 210 - (cursorSpeed / maxSpeed) * (210 - 28) - 14
+  const averageIntensity = rows.length
+    ? Math.round(rows.reduce((total, row) => total + row.intensity, 0) / rows.length)
+    : 0
+  const peakRow = rows.reduce((best, row) => (row.peakSpeed > best.peakSpeed ? row : best), rows[0] || { peakSpeed: 0 })
+  const levelCounts = rows.reduce((counts, row) => {
+    counts[row.level] = (counts[row.level] || 0) + 1
+    return counts
+  }, {})
+
+  useEffect(() => {
+    setGraphFrameIndex(0)
+
+    if (!isSelectedPlaying) return undefined
+
+    const timer = window.setInterval(() => {
+      setGraphFrameIndex((index) => (index + 1) % graphLength)
+    }, 44)
+
+    return () => window.clearInterval(timer)
+  }, [graphLength, isSelectedPlaying, selectedRow?.id])
+
+  if (!selectedRow) {
+    return <div className="emptyState">No IMU swing intensity data available.</div>
+  }
+
+  return (
+    <div className="swingIntensity">
+      <div className="intensitySummary">
+        <div>
+          <span>Total Swings</span>
+          <b>{rows.length}</b>
+          <small>IMU CSV recordings</small>
+        </div>
+        <div>
+          <span>Avg Intensity</span>
+          <b>{averageIntensity}<small>/100</small></b>
+          <small>relative swing load</small>
+        </div>
+        <div>
+          <span>Peak Speed</span>
+          <b>{peakRow.peakSpeed}<small>km/h</small></b>
+          <small>{formatCategoryName(peakRow.category || 'unknown')}</small>
+        </div>
+        <div>
+          <span>Common Level</span>
+          <b>{Object.entries(levelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'n/a'}</b>
+          <small>from selected dataset</small>
+        </div>
+      </div>
+
+      <div className="intensityLayout">
+        <div className="intensityRows">
+          {rows.map((row) => (
+            <div
+              className={row.id === selectedRow.id ? 'intensityRowCard active' : 'intensityRowCard'}
+              key={row.id}
+            >
+              <button
+                className="intensitySelect"
+                type="button"
+                onClick={() => setSelectedId(row.id)}
+              >
+                <span>#{row.shotNo}</span>
+                <b>{formatCategoryName(row.category)}</b>
+                <em className={row.tone}>{row.level}</em>
+                <strong>{row.intensity}</strong>
+                <small>{row.peakSpeed} km/h peak</small>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="intensityGraphPanel">
+          <div className="intensityGraphHeader">
+            <div>
+              <span>Selected Swing</span>
+              <h3>{formatCategoryName(selectedRow.category)} #{selectedRow.shotNo}</h3>
+              <p>{selectedRow.file}</p>
+            </div>
+            <div className="selectedSwingActions">
+              <button
+                className={isSelectedPlaying ? 'selectedPlayButton active' : 'selectedPlayButton'}
+                type="button"
+                onClick={() => setPlayingId((currentId) => (currentId === selectedRow.id ? '' : selectedRow.id))}
+              >
+                <Play size={16} />
+                {isSelectedPlaying ? 'Pause' : 'Play'}
+              </button>
+              <div className={`intensityPill ${selectedRow.tone}`}>
+                {selectedRow.level}
+                <b>{selectedRow.intensity}/100</b>
+              </div>
+            </div>
+          </div>
+
+          <svg className="speedGraph" viewBox="0 0 620 210" role="img" aria-label="Swing speed graph">
+            {[42, 84, 126, 168].map((y) => <line className="gridLine" x1="0" x2="620" y1={y} y2={y} key={y} />)}
+            {[155, 310, 465].map((x) => <line className="gridLine" x1={x} x2={x} y1="0" y2="210" key={x} />)}
+            <path className="speedGraphLine" d={graphPath} />
+            {selectedRow.series.map(([time, speed], index) => {
+              const x = (index / Math.max(selectedRow.series.length - 1, 1)) * 620
+              const y = 210 - (speed / maxSpeed) * (210 - 28) - 14
+              return <circle className="speedGraphDot" cx={x} cy={y} r="3" key={`${time}-${speed}`} />
+            })}
+            {isSelectedPlaying && (
+              <>
+                <line className="speedGraphCursorLine" x1={cursorX} x2={cursorX} y1="0" y2="210" />
+                <circle className="speedGraphCursor" cx={cursorX} cy={cursorY} r="7" />
+              </>
+            )}
+          </svg>
+
+          {isSelectedPlaying && (
+            <SwingReplayCanvas row={selectedRow} isPlaying={isSelectedPlaying} />
+          )}
+
+          <div className="intensityMetrics">
+            <div>
+              <span>Peak Speed</span>
+              <b>{selectedRow.peakSpeed}<small>km/h</small></b>
+            </div>
+            <div>
+              <span>Avg Speed</span>
+              <b>{selectedRow.avgSpeed}<small>km/h</small></b>
+            </div>
+            <div>
+              <span>Peak Accel</span>
+              <b>{selectedRow.peakAccel}<small>g</small></b>
+            </div>
+            <div>
+              <span>Impact</span>
+              <b>{selectedRow.impactMs}<small>ms</small></b>
+            </div>
+            <div>
+              <span>Rows</span>
+              <b>{selectedRow.samples}</b>
+            </div>
+            <div>
+              <span>Duration</span>
+              <b>{selectedRow.durationMs}<small>ms</small></b>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HardwareDetail() {
   return (
     <div className="deviceGrid">
@@ -583,6 +1036,90 @@ function ActionDetail() {
       <button type="button"><Video size={18} />Analyze Video</button>
       <button type="button"><Upload size={18} />Upload Session</button>
       <button type="button"><Medal size={18} />View Goals</button>
+    </div>
+  )
+}
+
+function DashboardSummary({ player, data, intensityRows = [] }) {
+  const totalShots = data.summaryItems.find(([label]) => label === 'Total Shots')?.[1] || '0'
+  const bestShot = data.summaryItems.find(([label]) => label === 'Best Shot')?.[1] || 'n/a'
+  const avgIntensity = intensityRows.length
+    ? Math.round(intensityRows.reduce((total, row) => total + row.intensity, 0) / intensityRows.length)
+    : 0
+  const peakSwing = intensityRows.reduce((best, row) => (row.peakSpeed > best.peakSpeed ? row : best), intensityRows[0] || { peakSpeed: 0, level: 'n/a', category: 'unknown' })
+
+  return (
+    <div className="summaryDetail">
+      <div className="summaryHero">
+        <div>
+          <span>Current Player</span>
+          <h3>{player.name}</h3>
+          <p>{player.level} · {player.hand} hand · baseline {player.baseline}/100</p>
+        </div>
+        <div>
+          <b>{data.timer}</b>
+          <small>{data.drill}</small>
+        </div>
+      </div>
+
+      <div className="summaryQuickStats">
+        <article>
+          <Target size={20} />
+          <span>Total Shots</span>
+          <b>{totalShots}</b>
+        </article>
+        <article>
+          <Medal size={20} />
+          <span>Best Shot</span>
+          <b>{bestShot}</b>
+        </article>
+        <article>
+          <Activity size={20} />
+          <span>Avg Intensity</span>
+          <b>{avgIntensity}<small>/100</small></b>
+        </article>
+        <article>
+          <Zap size={20} />
+          <span>Peak Swing</span>
+          <b>{peakSwing.peakSpeed}<small>km/h</small></b>
+        </article>
+      </div>
+
+      <section>
+        <h3>Training Scores</h3>
+        <ScoreOverview items={data.scores} />
+      </section>
+
+      <section>
+        <h3>Recent Shots</h3>
+        <RecentShotsDetail shots={data.recentShots} />
+      </section>
+
+      <section>
+        <h3>Elbow Analysis</h3>
+        <ElbowDetail />
+      </section>
+
+      <section>
+        <h3>Sweet Spot</h3>
+        <SweetSpotDetail />
+      </section>
+
+      <section>
+        <h3>Swing Intensity Rows</h3>
+        <SwingIntensityDetail rows={intensityRows} />
+      </section>
+
+      <section className="summaryAdvice">
+        <h3>Coach Summary</h3>
+        <div>
+          <b>{data.advice.title}</b>
+          <p>{data.advice.body}</p>
+          <ul>
+            {data.advice.steps.map((step) => <li key={step}>{step}</li>)}
+          </ul>
+        </div>
+      </section>
     </div>
   )
 }
@@ -652,6 +1189,14 @@ function getCategories(data) {
     description: 'Speed and acceleration from motion sensors.',
     icon: Zap,
     content: <SpeedDetail />,
+  },
+  {
+    id: 'swing-intensity',
+    kicker: 'IMU',
+    title: 'Swing Intensity',
+    description: 'Every IMU recording ranked by swing speed and intensity level.',
+    icon: Activity,
+    content: <SwingIntensityDetail rows={swingIntensityRows} />,
   },
   {
     id: 'hardware',
@@ -1487,12 +2032,26 @@ function ConsistencyWaveformPanel({ player, imuSamples = [] }) {
   )
 }
 
-function OverviewPage({ categories, onCategoryClick }) {
+function OverviewPage({ categories, onCategoryClick, onSummaryClick }) {
   return (
-    <section className="categoryGrid" aria-label="Dashboard categories">
-      {categories.map((item) => (
-        <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
-      ))}
+    <section className="overviewPage" aria-label="Dashboard overview">
+      <div className="summaryEntry">
+        <div>
+          <span>Overview Summary</span>
+          <h2>Session snapshot</h2>
+          <p>Open one view with training scores, latest shots, coach advice, IMU swing intensity rows, and the speed graph.</p>
+        </div>
+        <button type="button" onClick={onSummaryClick}>
+          <ChartNoAxesCombined size={18} />
+          Summary
+        </button>
+      </div>
+
+      <div className="categoryGrid" aria-label="Dashboard categories">
+        {categories.map((item) => (
+          <CategoryCard item={item} key={item.id} onClick={() => onCategoryClick(item.id)} />
+        ))}
+      </div>
     </section>
   )
 }
@@ -1704,7 +2263,16 @@ export default function App() {
   const selectedPlayer = players.find((player) => player.id === selectedPlayerId) || players[0]
   const currentData = playerDatasets[selectedPlayer.id] || playerDatasets.player1
   const categories = getCategories(currentData)
-  const selectedCategory = categories.find((item) => item.id === selectedId)
+  const summaryCategory = {
+    id: 'summary',
+    kicker: 'Summary',
+    title: 'Session Summary',
+    description: 'All key dashboard outputs in one view, including IMU swing intensity and speed graph.',
+    content: <DashboardSummary player={selectedPlayer} data={currentData} intensityRows={swingIntensityRows} />,
+  }
+  const selectedCategory = selectedId === 'summary'
+    ? summaryCategory
+    : categories.find((item) => item.id === selectedId)
   const playerVisualizations = createVisualizationSets(selectedPlayer, currentData)
   const selectedVisualization = playerVisualizations[selectedVisualizationId]
   const currentMockups = createPageMockups(selectedPlayer, currentData)
@@ -1739,7 +2307,11 @@ export default function App() {
             onSelectPlayer={handleSelectPlayer}
           />
           {activePage === 'overview' ? (
-            <OverviewPage categories={categories} onCategoryClick={handleCategoryClick} />
+            <OverviewPage
+              categories={categories}
+              onCategoryClick={handleCategoryClick}
+              onSummaryClick={() => setSelectedId('summary')}
+            />
           ) : activePage === 'training-form' ? (
             <TrainingFormPage onBack={() => setActivePage('overview')} />
           ) : (
